@@ -23,8 +23,13 @@ scene framework, or second handwritten mathematical implementation is used.
 The initial realization accepts extrinsic intersections; triangle adjacency
 and intrinsic distances remain independent of those intersections.
 
-The original reading material is under [books](books/). The full staged design
-is in [STAR M1](notes/STAR-M1.md). Its later gluing, FN, coarse-map, tetrahedral,
+The reading notes are:
+
+- [Mostow rigidity](books/mostow-rigidity.md)
+- [Hyperbolic crochet](books/hyperbolic-crochet.md)
+- [Papadopoulos on quasiconformal geometry](books/papadopoulos-quasiconformal.md)
+
+The full staged design is in [STAR M1](notes/STAR-M1.md). Its later gluing, FN, coarse-map, tetrahedral,
 and boundary encounters are planned, not implemented by this first slice.
 
 ## Build and evidence boundaries

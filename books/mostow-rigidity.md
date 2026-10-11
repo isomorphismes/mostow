@@ -44,6 +44,14 @@ The §6.3 route is the one most directly connected to regular ideal simplices, h
 - Widely available as Thurston's Princeton lecture notes.
 - One public copy: https://homepages.math.uic.edu/~kauffman/Thurston.pdf
 
+### Peter Scott — *The Geometries of 3-Manifolds* (1983)
+
+**Unbuilt exhibit:** [dimension-two flexibility versus dimension-three rigidity #3](https://github.com/isomorphismes/mostow/issues/3). Do not confuse with [existing hyperbolic sheet qualification #2](https://github.com/isomorphismes/mostow/issues/2).
+
+**Peter Scott**, “The Geometries of 3-Manifolds,” *Bulletin of the London Mathematical Society* **15** (1983), no. 5, 401–487. [DOI](https://doi.org/10.1112/blms/15.5.401).
+
+Scott's §§3–6 place hyperbolic 3-space alongside the other seven Thurston geometries and explain their relationship to Seifert-fibered and decomposed 3-manifolds. **Mostow rigidity is about the hyperbolic setting under its hypotheses; it does not say that all 3-manifolds are hyperbolic or that the other seven model geometries have the same rigidity.** Useful context for deciding exactly which geometry a proposed deformation or visual experiment belongs to.
+
 ## Modern exposition
 
 ### Richard Evan Schwartz — *Mostow Rigidity Made Easier* (2025/2026)
