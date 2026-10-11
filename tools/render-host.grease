@@ -1,0 +1,17 @@
+#!/usr/bin/env grease
+# ROOT OUTPUT SECONDS YAW PITCH; real host EGL/GLES, not phone acceptance.
+var root = $(git -C "$[ARGV[0]]" rev-parse --show-toplevel)
+var output = ARGV[1]
+var compiler = ENV.MOSTOW_HOST_COMPILER
+var gl = ENV.MOSTOW_GL_ROOT
+test -x "$compiler"
+test -f "$gl/include/EGL/egl.h"
+test -f "$gl/include/GLES2/gl2.h"
+mkdir -p "$root/build/host"
+"$compiler" -fno-link-libatomic -std=c11 -O2 -Wall -Wextra -Werror -Wpedantic \
+  -I "$root/native" -I "$root/fixtures" -I "$root/android" -isystem "$gl/include" \
+  "$root/icky/mostow_sheet.c" "$root/native/mostow_view.c" \
+  "$root/android/mostow_renderer.c" "$root/native/render_host.c" \
+  -L "$gl/lib/x86_64-linux-gnu" -l:libEGL.so.1 -l:libGLESv2.so.2 -lm \
+  -o "$root/build/host/render-mostow"
+"$root/build/host/render-mostow" "$output" "$[ARGV[2]]" "$[ARGV[3]]" "$[ARGV[4]]"

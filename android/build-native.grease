@@ -1,0 +1,63 @@
+#!/usr/bin/env grease
+# Explicit inputs: ROOT NDK ABI OUTPUT. No device compilation or provisioning.
+var root = $(git -C "$[ARGV[0]]" rev-parse --show-toplevel)
+var ndk = ARGV[1]
+var abi = ARGV[2]
+var output = ARGV[3]
+var target = 'armv7a-linux-androideabi21'
+var ick = ENV.MOSTOW_ICK_ARMV7
+var gnu_target = 'arm-linux-gnueabi'
+var header_target = 'arm-linux-androideabi'
+var target_flags = ['-marm', '-march=armv7-a', '-mfpu=neon', '-mfloat-abi=softfp']
+if test "$abi" = arm64-v8a {
+  setvar target = 'aarch64-linux-android21'
+  setvar ick = ENV.MOSTOW_ICK_ARM64
+  setvar gnu_target = 'aarch64-linux-gnu'
+  setvar header_target = 'aarch64-linux-android'
+  setvar target_flags = ['-ffixed-x18']
+}
+if test "$abi" != arm64-v8a {
+  if test "$abi" != armeabi-v7a { printf '\033[31mFAIL\033[0m unsupported ABI\n'; exit 2 }
+}
+var tools = "$ndk/toolchains/llvm/prebuilt/linux-x86_64/bin"
+var clang = "$tools/$target-clang"
+var glue = "$ndk/sources/android/native_app_glue"
+var sysroot = "$ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
+test -x "$ick"
+var support = $(dirname "$ick")
+test $("$ick" -B "$support/" -dumpmachine) = "$gnu_target"
+var builtin = $("$ick" -B "$support/" -print-file-name=include)
+test -f "$builtin/stddef.h"
+test -f "$builtin/stdatomic.h"
+test -x "$clang"
+test -x "$tools/ld.lld"
+test -f "$glue/android_native_app_glue.c"
+mkdir -p "$root/build/$abi"
+mkdir -p $(dirname "$output")
+# Compile original owned Icky C; the NDK receives assembly and its own glue C.
+# This raw producer's existing profile is API 21, O2, PIC, strict warnings,
+# ARM A32/NEON/softfp or AArch64 with the Android-reserved x18 untouched.
+for unit in ([['icky/mostow_sheet.c', 'sheet'], ['native/mostow_view.c', 'view'],
+              ['android/mostow_renderer.c', 'renderer'], ['android/mostow_android.c', 'activity']]) {
+  var source = unit[0]
+  var name = unit[1]
+  "$ick" -B "$support/" @target_flags --sysroot="$sysroot" \
+    -nostdinc -isystem "$builtin" -isystem "$sysroot/usr/include" \
+    -isystem "$sysroot/usr/include/$header_target" \
+    -D__ANDROID__ -D__ANDROID_API__=21 -D__ANDROID_MIN_SDK_VERSION__=21 \
+    -DBIONIC_IOCTL_NO_SIGNEDNESS_OVERLOAD \
+    -std=c11 -O2 -fPIC -Wall -Wextra -Werror -Wpedantic \
+    -I "$glue" -I "$root/native" -I "$root/fixtures" -I "$root/android" \
+    -S "$root/$source" -o "$root/build/$abi/$name.s"
+  "$clang" @target_flags -c "$root/build/$abi/$name.s" -o "$root/build/$abi/$name.o"
+}
+"$clang" -std=c11 -O2 -fPIC -Wall -Wextra -Wno-format-pedantic -I "$glue" \
+  -c "$glue/android_native_app_glue.c" -o "$root/build/$abi/glue.o"
+"$clang" --ld-path="$tools/ld.lld" -shared "$root/build/$abi/sheet.o" "$root/build/$abi/view.o" "$root/build/$abi/renderer.o" \
+  "$root/build/$abi/activity.o" "$root/build/$abi/glue.o" -Wl,--no-undefined -Wl,-soname,libmostow.so \
+  -Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384 -landroid -llog -lEGL -lGLESv2 -lm -o "$output"
+"$tools/llvm-strip" --strip-unneeded "$output"
+"$tools/llvm-readelf" -Ws "$output" > "$root/build/$abi/symbols.tsv"
+rg 'ANativeActivity_onCreate' "$root/build/$abi/symbols.tsv"
+rg 'android_main' "$root/build/$abi/symbols.tsv"
+printf '\033[32mPASS\033[0m Mostow owned ICK C and NDK assembly/link %s\n' "$abi"

@@ -1,0 +1,6 @@
+build_id	target	toolchain	ick_revision	ick_status	ick_evidence
+host-mathematics	x86_64-linux-gnu	ick	c61e448251744a2f40ad743ebef1a027bdcd2f9d	qualified	Direct ICK host tests, identical accepted fixture regeneration and two before/after byte-identical real GLES renders; qualification/division-20261009.md
+miro-a1-owned-c	armeabi-v7a	ick	c61e448251744a2f40ad743ebef1a027bdcd2f9d	qualified	All four owned translation units directly compile to ARM A32 NEON softfp assembly and link into the actual API21 r29 library
+miro-c67-owned-c	arm64-v8a	ick	c61e448251744a2f40ad743ebef1a027bdcd2f9d	qualified	All four owned translation units directly compile to AArch64 assembly with x18 reserved and link into the actual API21 r29 library
+miro-a1-platform	armeabi-v7a	ndk	c61e448251744a2f40ad743ebef1a027bdcd2f9d	gap:upstream-glue-assembler-platform-link	NDK compiles its own glue, assembles ICK output and links Bionic; APK producer and physical acceptance remain distinct
+miro-c67-platform	arm64-v8a	ndk	c61e448251744a2f40ad743ebef1a027bdcd2f9d	gap:upstream-glue-assembler-platform-link	NDK compiles its own glue, assembles ICK output and links Bionic; APK producer and physical acceptance remain distinct

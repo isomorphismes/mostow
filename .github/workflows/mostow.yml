@@ -1,0 +1,172 @@
+name: Mostow direct ICK and paired Android producers
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mostow-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  ASAN_OPTIONS: detect_leaks=0
+
+jobs:
+  compilers:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: [armeabi-v7a, arm64-v8a]
+    steps:
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+        with:
+          packages: platform-tools
+      - run: sdkmanager "ndk;29.0.14206865"
+      - uses: isomorphisms/ai-ci/ick-android@4ea071a96239f3a29ca6d98454feb59947d87cfe
+        with:
+          abi: ${{ matrix.abi }}
+          ndk: ${{ env.ANDROID_HOME }}/ndk/29.0.14206865
+      - name: Retain the qualified installed compiler stage
+        run: tar -C "${{ runner.temp }}/ick-android-${{ matrix.abi }}-stage" -czf "${{ runner.temp }}/ick-${{ matrix.abi }}.tar.gz" .
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ick-${{ matrix.abi }}
+          path: ${{ runner.temp }}/ick-${{ matrix.abi }}.tar.gz
+          if-no-files-found: error
+
+  host:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/grease
+        id: grease
+      - uses: isomorphisms/ai-ci/ick-host@4ea071a96239f3a29ca6d98454feb59947d87cfe
+        id: ick
+      - run: sudo apt-get install -y libegl-dev libgles-dev libgl1-mesa-dri
+      - name: Execute the existing geometry and negative cases
+        env:
+          MOSTOW_HOST_COMPILER: ${{ steps.ick.outputs.compiler }}
+        run: '"${{ steps.grease.outputs.executable }}" tools/test-host.grease "$GITHUB_WORKSPACE"'
+      - name: Regenerate the fixture with its unchanged acceptance bounds
+        env:
+          MOSTOW_HOST_COMPILER: ${{ steps.ick.outputs.compiler }}
+        run: '"${{ steps.grease.outputs.executable }}" tools/generate-fixture.grease "$GITHUB_WORKSPACE"'
+      - name: Require identical accepted fixture bytes
+        run: git diff --exit-code -- fixtures/sheet_base.inc
+      - name: Exercise the shared GLES renderer at its initial pose
+        env:
+          MOSTOW_HOST_COMPILER: ${{ steps.ick.outputs.compiler }}
+          MOSTOW_GL_ROOT: /usr
+          EGL_PLATFORM: surfaceless
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: '"${{ steps.grease.outputs.executable }}" tools/render-host.grease "$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/build/host/zero.ppm" 0 0.45 -0.7'
+      - name: Exercise the shared renderer after motion and camera changes
+        env:
+          EGL_PLATFORM: surfaceless
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: build/host/render-mostow build/host/moving.ppm 20 0.3 0.4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: mostow-host-render-evidence
+          path: build/host/*.ppm
+          if-no-files-found: error
+
+  paired-packages:
+    needs: compilers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/grease
+        id: grease
+      - uses: isomorphisms/ai-ci/ick-host@4ea071a96239f3a29ca6d98454feb59947d87cfe
+        id: ick
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: isomorphisms/ai-ci
+          ref: 4ea071a96239f3a29ca6d98454feb59947d87cfe
+          path: .compiler-owner
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: ick-*
+          path: build/ick-packages
+          merge-multiple: true
+      - name: Restore ARMv7 ICK
+        run: make -f .compiler-owner/ick-android/Makefile restore-stage ABI=armeabi-v7a ICK_STAGE="$GITHUB_WORKSPACE/build/ick/armeabi-v7a" ICK_ARCHIVE="$GITHUB_WORKSPACE/build/ick-packages/ick-armeabi-v7a.tar.gz"
+      - name: Restore AArch64 ICK
+        run: make -f .compiler-owner/ick-android/Makefile restore-stage ABI=arm64-v8a ICK_STAGE="$GITHUB_WORKSPACE/build/ick/arm64-v8a" ICK_ARCHIVE="$GITHUB_WORKSPACE/build/ick-packages/ick-arm64-v8a.tar.gz"
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+        with:
+          packages: platform-tools
+      - run: sdkmanager "platforms;android-34" "build-tools;35.0.0" "ndk;29.0.14206865"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: isomorphisms/android-NDK
+          ref: 7c61ee43e75f7c2dab9288edb0e10055898b36e6
+          path: .packager
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: isomorphismes/wegert
+          ref: 89dcfb840cec1a66ee04c7f7404954cbd6c09839
+          path: .test-signing
+          sparse-checkout: _/build/app/wegert-debug.keystore
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: isomorphisms/ai-ci
+          ref: 01608a2493fa409463f70e8fbfd8a123ef59ee85
+          path: .policy
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: isomorphisms/flexible-pipes
+          ref: 9775aa324f523cbc6c758e89461915484a5a0fc7
+          path: .pipes
+          persist-credentials: false
+      - name: Install the ELF inspection dependency
+        run: sudo apt-get install -y ripgrep
+      - name: Build the maintained paired NativeActivity APKs
+        env:
+          MOSTOW_GREASE: ${{ steps.grease.outputs.executable }}
+          MOSTOW_ICK_ARMV7: ${{ github.workspace }}/build/ick/armeabi-v7a/bin/arm-linux-gnueabi-gcc
+          MOSTOW_ICK_ARM64: ${{ github.workspace }}/build/ick/arm64-v8a/bin/aarch64-linux-gnu-gcc
+        run: >-
+          "${{ steps.grease.outputs.executable }}" android/build-pair.grease
+          "$GITHUB_WORKSPACE" "$ANDROID_HOME/ndk/29.0.14206865" "$GITHUB_WORKSPACE/.packager"
+          "$ANDROID_HOME" "$ANDROID_HOME/build-tools/35.0.0"
+          "$GITHUB_WORKSPACE/.test-signing/_/build/app/wegert-debug.keystore"
+          "$GITHUB_WORKSPACE/build/paired"
+      - name: Run the real Flexible Pipes producer under the merged policy
+        env:
+          MOSTOW_GREASE: ${{ steps.grease.outputs.executable }}
+          MOSTOW_HOST_COMPILER: ${{ steps.ick.outputs.compiler }}
+        run: >-
+          "${{ steps.grease.outputs.executable }}" tools/preflight-pair.grease
+          "$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/.pipes" "$GITHUB_WORKSPACE/.policy"
+          "$GITHUB_WORKSPACE/.packager" "$GITHUB_WORKSPACE/build/paired"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: mostow-paired-producer-evidence
+          path: build/paired/
+          if-no-files-found: error
+

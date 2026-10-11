@@ -1,0 +1,11 @@
+#!/usr/bin/env grease
+var root = $(git -C "$[ARGV[0]]" rev-parse --show-toplevel)
+var compiler = ENV.MOSTOW_HOST_COMPILER
+mkdir -p "$root/build/host"
+test -x "$compiler"
+"$compiler" -fno-link-libatomic -std=c11 -O2 -Wall -Wextra -Werror -Wpedantic -I "$root/native" -I "$root/fixtures" \
+  "$root/icky/mostow_sheet.c" "$root/native/mostow_view.c" "$root/native/test_mostow_sheet.c" \
+  -lm -o "$root/build/host/test-mostow"
+"$root/build/host/test-mostow"
+python3 "$root/tools/test_normalize_icky_c.py"
+printf '\033[32mPASS\033[0m direct ICK host geometry and retained legacy adapter controls\n'

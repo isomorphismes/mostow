@@ -1,0 +1,12 @@
+schema	aici-android-producer-v1
+result	PASS
+policy_commit	01608a2493fa409463f70e8fbfd8a123ef59ee85
+packager_commit	7c61ee43e75f7c2dab9288edb0e10055898b36e6
+package	org.isomorphisms.mostow
+version_code	1
+abi	armeabi-v7a
+signing_lane	test
+signer_cert_sha256	de9b1d47c5a65e6d46a204b79dd9ee566b9d3c9832ba81ebc4213d3392e92ff9
+apk_sha256	f6b2437a124acd37b07cc3296ea7153f886a5aad4744de5b75b079963802dca1
+prior_apk_sha256	-
+update_identity_result	NOT_VERIFIED

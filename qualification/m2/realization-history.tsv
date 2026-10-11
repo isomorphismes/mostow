@@ -1,0 +1,106 @@
+mesh	vertices	1023	faces	1881	edges	2903
+iteration	0	rms_edge_error	0.0292067321	damping	0.014
+iteration	100	rms_edge_error	1.97328445e-05	damping	0.00623980566
+iteration	200	rms_edge_error	4.63027289e-06	damping	0.0027810839
+iteration	300	rms_edge_error	4.2787698e-06	damping	0.00708302982
+iteration	400	rms_edge_error	4.20235039e-06	damping	0.00315690925
+iteration	500	rms_edge_error	4.12740759e-06	damping	0.00804020416
+iteration	600	rms_edge_error	4.05347049e-06	damping	0.00358352224
+iteration	700	rms_edge_error	3.97581598e-06	damping	0.00912672749
+iteration	800	rms_edge_error	3.89269887e-06	damping	0.00406778613
+iteration	900	rms_edge_error	3.80603966e-06	damping	0.0103600796
+iteration	1000	rms_edge_error	3.72035093e-06	damping	0.00461749164
+iteration	1100	rms_edge_error	3.63845465e-06	damping	0.00205801789
+stage	0.30	rms	3.54452807e-06	status	0	min	0.999920533	max	1.00020207	L	1.00020207	worst_face	443
+iteration	0	rms_edge_error	0.017849783	damping	0.08
+iteration	100	rms_edge_error	2.55493916e-05	damping	0.0356560323
+iteration	200	rms_edge_error	1.90658894e-05	damping	0.015891908
+iteration	300	rms_edge_error	1.71319815e-05	damping	0.0404744561
+iteration	400	rms_edge_error	1.59230826e-05	damping	0.0180394814
+iteration	500	rms_edge_error	1.49625219e-05	damping	0.0459440238
+iteration	600	rms_edge_error	1.42601587e-05	damping	0.02047727
+iteration	700	rms_edge_error	1.36556156e-05	damping	0.00912672749
+iteration	800	rms_edge_error	1.31966653e-05	damping	0.0232444922
+iteration	900	rms_edge_error	1.27545878e-05	damping	0.0103600796
+iteration	1000	rms_edge_error	1.23885314e-05	damping	0.00461749164
+iteration	1100	rms_edge_error	1.21229161e-05	damping	0.0117601022
+stage	0.40	rms	1.18675355e-05	status	0	min	0.999749331	max	1.00048125	L	1.00048125	worst_face	257
+iteration	0	rms_edge_error	0.0185931406	damping	0.014
+iteration	100	rms_edge_error	2.86114612e-05	damping	0.0356560323
+iteration	200	rms_edge_error	2.64872651e-05	damping	0.015891908
+iteration	300	rms_edge_error	2.48033748e-05	damping	0.00708302982
+iteration	400	rms_edge_error	2.31167944e-05	damping	0.0180394814
+iteration	500	rms_edge_error	2.23169981e-05	damping	0.0459440238
+iteration	600	rms_edge_error	2.18197389e-05	damping	0.02047727
+iteration	700	rms_edge_error	2.14117102e-05	damping	0.00912672749
+iteration	800	rms_edge_error	2.09942304e-05	damping	0.0232444922
+iteration	900	rms_edge_error	2.00354892e-05	damping	0.0592004546
+iteration	1000	rms_edge_error	1.97599003e-05	damping	0.0263856665
+iteration	1100	rms_edge_error	1.95035952e-05	damping	0.0117601022
+stage	0.50	rms	1.92679915e-05	status	0	min	0.99970689	max	1.00064073	L	1.00064073	worst_face	482
+iteration	0	rms_edge_error	0.0172587848	damping	0.014
+iteration	100	rms_edge_error	6.27502081e-05	damping	0.203748756
+iteration	200	rms_edge_error	3.75101175e-05	damping	0.0908109029
+iteration	300	rms_edge_error	2.92042211e-05	damping	0.0404744561
+iteration	400	rms_edge_error	2.70582599e-05	damping	0.0180394814
+iteration	500	rms_edge_error	2.60179589e-05	damping	0.0459440238
+iteration	600	rms_edge_error	2.53445554e-05	damping	0.02047727
+iteration	700	rms_edge_error	2.48621307e-05	damping	0.00912672749
+iteration	800	rms_edge_error	2.45419832e-05	damping	0.0232444922
+iteration	900	rms_edge_error	2.43113705e-05	damping	0.0592004546
+iteration	1000	rms_edge_error	2.41342343e-05	damping	0.0263856665
+iteration	1100	rms_edge_error	2.39861921e-05	damping	0.0672005842
+stage	0.60	rms	2.38645019e-05	status	0	min	0.999283269	max	1.00055189	L	1.00071725	worst_face	265
+iteration	0	rms_edge_error	0.0188871426	damping	0.014
+iteration	100	rms_edge_error	0.000101472056	damping	0.0356560323
+iteration	200	rms_edge_error	8.63604663e-05	damping	0.0908109029
+iteration	300	rms_edge_error	7.73881625e-05	damping	0.0404744561
+iteration	400	rms_edge_error	6.97627452e-05	damping	0.0180394814
+iteration	500	rms_edge_error	6.35482521e-05	damping	0.0459440238
+iteration	600	rms_edge_error	5.81100642e-05	damping	0.117012971
+iteration	700	rms_edge_error	5.30681088e-05	damping	0.00912672749
+iteration	800	rms_edge_error	4.94707226e-05	damping	0.0232444922
+iteration	900	rms_edge_error	4.59889152e-05	damping	0.0592004546
+iteration	1000	rms_edge_error	4.29705255e-05	damping	0.0263856665
+iteration	1100	rms_edge_error	4.0276008e-05	damping	0.0672005842
+stage	0.70	rms	3.81115784e-05	status	0	min	0.999271392	max	1.00134382	L	1.00134382	worst_face	382
+iteration	0	rms_edge_error	0.0156584425	damping	0.014
+iteration	100	rms_edge_error	8.97366551e-05	damping	0.203748756
+iteration	200	rms_edge_error	7.91762534e-05	damping	0.0908109029
+iteration	300	rms_edge_error	7.65889585e-05	damping	0.0404744561
+iteration	400	rms_edge_error	7.46778012e-05	damping	0.103082751
+iteration	500	rms_edge_error	7.30402654e-05	damping	0.0459440238
+iteration	600	rms_edge_error	7.13349503e-05	damping	0.117012971
+iteration	700	rms_edge_error	6.69889342e-05	damping	0.0521527285
+iteration	800	rms_edge_error	6.38793283e-05	damping	0.13282567
+iteration	900	rms_edge_error	6.23865348e-05	damping	0.0592004546
+iteration	1000	rms_edge_error	6.11747387e-05	damping	0.0263856665
+iteration	1100	rms_edge_error	6.00628118e-05	damping	0.0672005842
+stage	0.80	rms	5.89932526e-05	status	0	min	0.999277786	max	1.0011045	L	1.0011045	worst_face	341
+iteration	0	rms_edge_error	0.0280412152	damping	0.014
+iteration	100	rms_edge_error	0.000104426173	damping	0.0356560323
+iteration	200	rms_edge_error	9.52245053e-05	damping	0.0908109029
+iteration	300	rms_edge_error	8.85343079e-05	damping	0.231282606
+iteration	400	rms_edge_error	8.41357969e-05	damping	0.103082751
+iteration	500	rms_edge_error	7.97851377e-05	damping	0.0459440238
+iteration	600	rms_edge_error	7.64358979e-05	damping	0.02047727
+iteration	700	rms_edge_error	7.3343016e-05	damping	0.0521527285
+iteration	800	rms_edge_error	7.05869528e-05	damping	0.13282567
+iteration	900	rms_edge_error	6.81253231e-05	damping	0.0592004546
+iteration	1000	rms_edge_error	6.57494452e-05	damping	0.0263856665
+iteration	1100	rms_edge_error	6.37581542e-05	damping	0.0672005842
+stage	0.90	rms	6.20082685e-05	status	0	min	0.998929713	max	1.00194844	L	1.00194844	worst_face	382
+iteration	0	rms_edge_error	0.0270195824	damping	0.014
+iteration	100	rms_edge_error	0.000165584431	damping	0.203748756
+iteration	200	rms_edge_error	0.000141840713	damping	0.0908109029
+iteration	300	rms_edge_error	0.000127703176	damping	0.231282606
+iteration	400	rms_edge_error	0.000117837906	damping	0.103082751
+iteration	500	rms_edge_error	0.000106918401	damping	0.0459440238
+iteration	600	rms_edge_error	9.78143166e-05	damping	0.117012971
+iteration	700	rms_edge_error	8.54294071e-05	damping	0.0521527285
+iteration	800	rms_edge_error	7.77143803e-05	damping	0.13282567
+iteration	900	rms_edge_error	7.0882843e-05	damping	0.0103600796
+iteration	1000	rms_edge_error	6.52995978e-05	damping	0.0263856665
+iteration	1100	rms_edge_error	6.0559739e-05	damping	0.0672005842
+stage	1.00	rms	5.60373392e-05	status	0	min	0.999053321	max	1.00170827	L	1.00170827	worst_face	382
+BASE_CERTIFICATE	PASS	min	0.99905332138	max	1.00170826899
