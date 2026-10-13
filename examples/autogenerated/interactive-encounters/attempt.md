@@ -26,4 +26,18 @@ mathematical buffers, time, selection, topology, or diagnostics.
 
 Target: the existing off-device pinned ICK → NDK route, ARMv7 and ARM64.
 Phone execution and source/host/build acceptance retain separate receipts.
-Implementation and acceptance are in progress; this record claims no PASS.
+The implementation runs through pinned ICK and the shared GLES renderer. At
+source 682df96ec01c30e4c06b7c208123a368e8303918, local semantic tests,
+separate-process reopening, geometric/classification mutants, framebuffer PNG
+replay, the scripted control recording and both signed Android builds passed.
+These are historical after a head change; fresh receipts must accompany the
+final PR head. Physical installation, update, input/lifecycle/export visibility,
+memory and sustained rendering remain NOT_RUN without an accessible device.
+
+The first hosted host job passed the semantic suite but failed when its new
+mutation gate invoked missing `rg`. The workflow now declares ripgrep in the
+host dependencies, as the paired producer already did. This does not weaken
+the negative gate. Earlier compiler failures from misleading indentation were
+fixed in source; strict warning flags remain unchanged. The first treatment
+test compared diagnostic-struct padding; it now compares every semantic field
+exactly while retaining byte comparisons of the actual mathematical buffers.

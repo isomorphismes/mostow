@@ -42,7 +42,8 @@ takes checkout, NDK, canonical android-NDK substrate, SDK, build-tools, public
 test keystore, and output directory; `MOSTOW_GREASE` identifies that runtime.
 `MOSTOW_HOST_COMPILER`, `MOSTOW_ICK_ARMV7`, and `MOSTOW_ICK_ARM64` select the
 qualified native and Android ICK drivers. The maintained producers compile
-original `←` and `÷` source directly.
+original `←` and `÷` source directly. Host mutation tests also use
+`MOSTOW_GREASE`; recording uses the pinned `MOSTOW_KITCHEN` movie assembler.
 It builds both maintained ABIs, verifies the established test certificate via
 the canonical packager, and emits per-APK receipts. It does not install or
 qualify either phone. The producer preflight additionally requires Mostow's

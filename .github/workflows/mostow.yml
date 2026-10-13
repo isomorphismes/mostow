@@ -51,7 +51,7 @@ jobs:
         id: grease
       - uses: isomorphisms/ai-ci/ick-host@4ea071a96239f3a29ca6d98454feb59947d87cfe
         id: ick
-      - run: sudo apt-get install -y libegl-dev libgles-dev libgl1-mesa-dri ffmpeg
+      - run: sudo apt-get install -y libegl-dev libgles-dev libgl1-mesa-dri ffmpeg ripgrep
       - name: Execute the existing geometry and negative cases
         env:
           MOSTOW_HOST_COMPILER: ${{ steps.ick.outputs.compiler }}
