@@ -82,12 +82,18 @@ int main(int argc,char **argv)
     REQUIRE(mostow_sample(sheet,90,after,MOSTOW_MAX_VERTICES,&later)==MOSTOW_OK&&
       mostow_anchor_sample(sheet,after,scene.anchor,moved_position,moved_normal)&&
       !memcmp(&saved_anchor,&scene.anchor,sizeof(saved_anchor)),"ANCHOR_ANIMATION");
+    scene.encounter=2;scene.rigidity.enforce_completeness=1;scene.rigidity.selected_coordinate=3;
+    mostow_m004_edge_only_shapes(scene.rigidity.trial);
+    REQUIRE(mostow_scene_valid(&scene),"M004_TRIAL_STATE");
     REQUIRE(mostow_scene_write(&scene,argv[2]),"SAVE");
     pid_t child=fork();REQUIRE(child>=0,"FORK");if(child==0){execl(argv[0],argv[0],"--reopen",argv[2],(char*)NULL);_exit(127);}
     int status=0;REQUIRE(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==0,"PROCESS_DEATH_REOPEN");
     MostowScene restored;REQUIRE(mostow_scene_read(&restored,argv[2])&&!memcmp(&restored,&scene,sizeof(scene)),"SCENE_EXACT_REOPEN");
     restored.source[0]='x';REQUIRE(!mostow_scene_valid(&restored),"SOURCE_MISMATCH");restored=scene;restored.fixture[0]='x';REQUIRE(!mostow_scene_valid(&restored),"FIXTURE_MISMATCH");
     restored=scene;restored.anchor.weights[0]=-1;REQUIRE(!mostow_scene_valid(&restored),"BAD_ANCHOR");
+    restored=scene;restored.rigidity.selected_coordinate=4;REQUIRE(!mostow_scene_valid(&restored),"BAD_SHAPE_COORDINATE");
+    restored=scene;restored.schema=2;REQUIRE(!mostow_scene_valid(&restored),"OLD_SCHEMA_REJECTED");
+    restored=scene;restored.encounter=3;REQUIRE(!mostow_scene_valid(&restored),"BAD_ENCOUNTER");
     FILE *bad=fopen(argv[2],"a");REQUIRE(bad,"BAD_SAVE_OPEN");fputs("unexpected trailing record\n",bad);fclose(bad);
     REQUIRE(!mostow_scene_read(&restored,argv[2]),"TRAILING_RECORD_REJECTED");remove(argv[2]);
     for(int page=0;page<3;++page){scene.control_page=page;for(int slot=0;slot<6;++slot){float rect[4];mostow_scene_control_rect(576,1152,slot,rect);

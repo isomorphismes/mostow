@@ -94,6 +94,7 @@ jobs:
             build/host/*.ppm
             build/host/encounters/sheet-*.png
             build/host/encounters/strings-*.png
+            build/host/encounters/m004-*.png
             build/host/encounters/*.scene
             build/host/encounters/interaction-host.mp4
           if-no-files-found: error

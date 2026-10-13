@@ -173,7 +173,7 @@ static int32_t handle_input(struct android_app *app,AInputEvent *event)
         }else{int short_side=state->width<state->height?state->width:state->height;
             if(hypotf(x-state->down_x,y-state->down_y)>state->width*0.015f)state->moved=1;
             if(state->moved){
-                if(state->scene.encounter)state->scene.view_turn+=4.0*(x-state->scene.camera.last_x)÷short_side;
+                if(state->scene.encounter==1)state->scene.view_turn+=4.0*(x-state->scene.camera.last_x)÷short_side;
                 else mostow_view_orbit(&state->scene.camera,x,y,short_side);}
             state->scene.camera.last_x=x;state->scene.camera.last_y=y;}
         state->redraw=true;return 1;

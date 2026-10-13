@@ -117,6 +117,7 @@ static const Glyph glyphs[]={
  {'6',{14,16,16,30,17,17,14}},{'7',{31,1,2,4,8,8,8}},{'8',{14,17,17,14,17,17,14}},
  {'9',{14,17,17,15,1,1,14}},{'.',{0,0,0,0,0,12,12}},{':',{0,12,12,0,12,12,0}},
  {'/',{1,2,2,4,8,8,16}},{'-',{0,0,0,31,0,0,0}},{'=',{0,31,0,31,0,0,0}},
+ {'+',{0,4,4,31,4,4,0}},
  {'<',{1,2,4,8,4,2,1}}
 };
 static float ui_vertices[120000];
@@ -234,12 +235,49 @@ static void draw_sheet(const MostowScene *s,const float matrix[16],const float r
         }
     }
 }
+static void draw_m004(const MostowScene *scene,const float matrix[16])
+{
+    MostowIdealShape complete[2];mostow_m004_complete_shapes(complete);
+    const unsigned edges[6][2]={{0,1},{0,2},{0,3},{1,2},{1,3},{2,3}};
+    for(unsigned group=0;group<2;++group){
+        const MostowIdealShape *shapes=group==1||scene->rigidity.enforce_completeness?complete:scene->rigidity.trial;
+        for(unsigned tetrahedron=0;tetrahedron<2;++tetrahedron){
+            double ideal[4][3];if(!mostow_m004_ideal_vertices(shapes[tetrahedron],ideal))continue;
+            float projected[4][3];int visible=1;
+            for(unsigned vertex=0;vertex<4;++vertex){
+                const float position[3]={0.65f*(float)ideal[vertex][0]+(group?1.2f:-1.2f),
+                    0.65f*(float)ideal[vertex][1]+(tetrahedron?-0.85f:0.85f),0.65f*(float)ideal[vertex][2]};
+                if(!mostow_project(matrix,position,width,height,projected[vertex]))visible=0;
+            }
+            if(!visible)continue;
+            for(unsigned edge=0;edge<6;++edge){float points[6];
+                memcpy(points,projected[edges[edge][0]],3*sizeof(float));
+                memcpy(points+3,projected[edges[edge][1]],3*sizeof(float));
+                stroke(points,2,group?2.5f:3.5f,0,group?0.25f:0.95f,group?0.82f:0.48f,group?0.85f:0.22f);
+            }
+        }
+    }
+    ui_count=0;
+    text(width*0.1f,height*0.30f,width÷300.0f,scene->rigidity.enforce_completeness?"COMPLETE KEPT":"FREE SHAPES");
+    text(width*0.63f,height*0.30f,width÷300.0f,"REFERENCE");
+    ui_flush(scene->illustrated?0.12f:0.85f,scene->illustrated?0.18f:0.9f,scene->illustrated?0.2f:0.95f);
+}
 static void draw_ui(const MostowScene *s,const MostowDiagnostics *d,const char *message)
 {
     float scale=width÷220.0f;char buffer[128];ui_count=0;
-    text(14,18,scale,s->encounter?"MOSTOW / HYPERBOLIC STRINGS":"MOSTOW / LIVING SHEET");
+    text(14,18,scale,s->encounter==2?"MOSTOW / FIGURE EIGHT":(s->encounter?"MOSTOW / HYPERBOLIC STRINGS":"MOSTOW / LIVING SHEET"));
     if(s->information){
-        if(s->encounter){MostowMapClass c=mostow_map_classify(mostow_boundary_map(s->angle,s->boost,s->shear));
+        if(s->encounter==2){MostowM004Diagnostics trial=mostow_m004_constraints(s->rigidity.trial);
+            text(14,52,scale,!trial.available?"INVALID IDEAL SHAPES":(trial.complete_to_tolerance?"COMPLETE TO TOLERANCE":
+                (s->rigidity.enforce_completeness?"TRIAL REJECTED":"INCOMPLETE TRIAL")));
+            if(trial.available){
+                snprintf(buffer,sizeof(buffer),"EDGE ERR %.2E %.2E",trial.residual[0],trial.residual[1]);text(14,84,scale*0.85f,buffer);
+                snprintf(buffer,sizeof(buffer),"CUSP ERR %.2E %.2E",trial.residual[2],trial.residual[3]);text(14,116,scale*0.85f,buffer);
+            }
+            snprintf(buffer,sizeof(buffer),"Z0 %+.3f %+.3f I",s->rigidity.trial[0].real,s->rigidity.trial[0].imaginary);text(14,148,scale,buffer);
+            snprintf(buffer,sizeof(buffer),"Z1 %+.3f %+.3f I",s->rigidity.trial[1].real,s->rigidity.trial[1].imaginary);text(14,180,scale,buffer);
+            text(14,212,scale*0.75f,"NUMERICAL CHECKS - TOLERANCE 1E-10");
+        }else if(s->encounter){MostowMapClass c=mostow_map_classify(mostow_boundary_map(s->angle,s->boost,s->shear));
             snprintf(buffer,sizeof(buffer),"%s / %s",s->model?"POINCARE":"KLEIN",mostow_map_class_name(c));text(14,52,scale,buffer);
             snprintf(buffer,sizeof(buffer),"STRING %d / 144",s->selected_string);text(14,84,scale,buffer);
             text(14,116,scale,"BOUNDARY POINTS AT INFINITY");
@@ -260,14 +298,18 @@ static void draw_ui(const MostowScene *s,const MostowDiagnostics *d,const char *
         rectangle(r[0],r[1],r[2],2);rectangle(r[0],r[1]+r[3]-2,r[2],2);rectangle(r[0],r[1],2,r[3]);rectangle(r[0]+r[2]-2,r[1],2,r[3]);
         text(r[0]+(r[2]-(float)strlen(label)*6*font)*0.5f,r[1]+r[3]*0.5f-font*3.5f,font,label);}
     const char *map_labels[3]={"DRAG: MAP ANGLE","DRAG: MAP BOOST","DRAG: MAP SHEAR"};
-    if(s->control_page>0){text(14,height*0.66f,scale,s->control_page==1?(s->encounter?map_labels[s->map_parameter]:"DRAG: TIME / PAUSE"):
+    if(s->encounter==2&&s->control_page>0){
+        const char *shape_labels[4]={"DRAG: Z0 REAL","DRAG: Z0 IMAG","DRAG: Z1 REAL","DRAG: Z1 IMAG"};
+        text(14,height*0.66f,scale,shape_labels[s->rigidity.selected_coordinate]);
+        rectangle(14,height*0.711f,width-28,2);
+    }else if(s->control_page>0){text(14,height*0.66f,scale,s->control_page==1?(s->encounter?map_labels[s->map_parameter]:"DRAG: TIME / PAUSE"):
         (s->encounter?"DRAG: HYPERBOLIC VIEWPOINT":"DRAG: LIGHT HEIGHT"));rectangle(14,height*0.711f,width-28,2);
         double map_value=s->map_parameter==0?s->angle÷12.56637061436+0.5:(s->map_parameter==1?s->boost:s->shear)÷6+0.5;
         double value=s->control_page==1?(s->encounter?map_value:s->time÷180):
           (s->encounter?s->view_shift÷4+0.5:(s->light[2]+1)*0.5);
         rectangle(14+(width-28)*(float)fmax(0,fmin(1,value))-4,height*0.7f,8,height*0.027f);}
     if(message&&message[0])text(14,height*0.92f,scale*0.8f,message);
-    else text(14,height*0.92f,scale*0.8f,"TAP SELECT / DRAG ORBIT / PINCH");
+    else text(14,height*0.92f,scale*0.8f,s->encounter==2?"MORE: SHAPE CONTROLS / DRAG ORBIT":"TAP SELECT / DRAG ORBIT / PINCH");
     if(!s->encounter)text(width*0.78f,height*0.265f,scale*0.55f,"LIGHT");
     ui_flush(s->illustrated?0.17f:0.82f,s->illustrated?0.24f:0.87f,s->illustrated?0.25f:0.88f);
     /* Visible light indicator, direction in the world XY plane. */
@@ -283,7 +325,8 @@ int mostow_renderer_scene(MostowScene *s,const char *message)
     glViewport(0,0,width,height);
     if(s->illustrated)glClearColor(0.94f,0.89f,0.77f,1);else glClearColor(0.035f,0.055f,0.075f,1);
     glDepthMask(GL_TRUE);glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-    if(s->encounter)draw_strings(s);else draw_sheet(s,matrix,rotation);
+    if(s->encounter==2)draw_m004(s,matrix);
+    else if(s->encounter)draw_strings(s);else draw_sheet(s,matrix,rotation);
     draw_ui(s,&diagnostic,message);
     return glGetError()==GL_NO_ERROR;
 }
@@ -292,6 +335,7 @@ int mostow_renderer_draw(const MostowView *view,double seconds,int paused,int ri
 int mostow_renderer_pick(MostowScene *s,float x,float y)
 {
     if(!sheet)return 0;
+    if(s->encounter==2)return 0;
     if(!s->encounter){MostowDiagnostics d;if(mostow_sample(sheet,s->time,vertices,MOSTOW_MAX_VERTICES,&d)!=MOSTOW_OK)return 0;
         return mostow_sheet_pick(sheet,vertices,&s->camera,width,height,x,y,&s->anchor);}
     float cx,cy,radius;disk_layout(s,&cx,&cy,&radius);double best=width*width;int found=-1;
