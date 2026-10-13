@@ -16,35 +16,32 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include "mostow_renderer.h"
 #include "mostow_view.h"
 
 typedef struct {
-    uint32_t version;
-    float yaw,pitch,distance;
-    double active_seconds;
-    int32_t paused,rings,information;
-} SavedState;
-typedef struct {
     struct android_app *app;
     EGLDisplay display; EGLSurface surface; EGLContext context;
     int width,height;
     bool renderer_started,focused,resumed,redraw;
-    int paused,rings,information;
-    MostowView view;
-    double active_seconds,previous_clock,next_frame;
+    MostowScene scene;
+    double previous_clock,next_frame;
     double frame_times[9000];
     double frame_intervals[9000],previous_frame;
     size_t frame_count;
     float touch_scale;
     int32_t control_pointer_id;
+    int control,export_requested,moved;
+    float down_x,down_y;
+    char save_path[1024],image_path[1024],export_scene_path[1024],message[96];
 } AndroidState;
 
 static double monotonic_seconds(void)
 { struct timespec value;clock_gettime(CLOCK_MONOTONIC,&value);return (double)value.tv_sec+(double)value.tv_nsec*1e-9; }
-static void release_gesture(AndroidState *state){mostow_view_release(&state->view);state->control_pointer_id=-1;}
+static void release_gesture(AndroidState *state){mostow_view_release(&state->scene.camera);state->control_pointer_id=-1;}
 static bool visible(const AndroidState *state){return state->renderer_started&&state->focused&&state->resumed;}
 static int pointer_index(AInputEvent *event,int32_t id)
 {for(size_t i=0;i<AMotionEvent_getPointerCount(event);++i)if(AMotionEvent_getPointerId(event,i)==id)return (int)i;return -1;}
@@ -107,9 +104,9 @@ fail:
 }
 static void save_state(AndroidState *state)
 {
-    SavedState *saved=malloc(sizeof(*saved));if(!saved)return;
-    *saved=(SavedState){1,state->view.yaw,state->view.pitch,state->view.distance,state->active_seconds,
-                       state->paused,state->rings,state->information};
+    (void)mostow_scene_write(&state->scene,state->save_path);
+    MostowScene *saved=malloc(sizeof(*saved));if(!saved)return;
+    *saved=state->scene;
     state->app->savedState=saved;state->app->savedStateSize=sizeof(*saved);
 }
 static void handle_command(struct android_app *app,int32_t command)
@@ -125,7 +122,8 @@ static void handle_command(struct android_app *app,int32_t command)
         release_gesture(state);break;
       case APP_CMD_RESUME:state->resumed=true;state->previous_clock=0;state->redraw=true;break;
       case APP_CMD_GAINED_FOCUS:state->focused=true;state->previous_clock=0;state->redraw=true;break;
-      case APP_CMD_PAUSE:state->resumed=false;state->previous_clock=0;release_gesture(state);report_frames(state);break;
+      case APP_CMD_PAUSE:state->resumed=false;state->previous_clock=0;release_gesture(state);report_frames(state);
+        (void)mostow_scene_write(&state->scene,state->save_path);break;
       case APP_CMD_LOST_FOCUS:state->focused=false;state->previous_clock=0;release_gesture(state);report_frames(state);break;
       case APP_CMD_SAVE_STATE:save_state(state);break;
       default:break;
@@ -144,28 +142,40 @@ static int32_t handle_input(struct android_app *app,AInputEvent *event)
         if(changed>=count)return 1;
         int32_t id=AMotionEvent_getPointerId(event,changed);
         float x=AMotionEvent_getX(event,changed),y=AMotionEvent_getY(event,changed);
-        if(state->view.primary_id<0){
-            int button=mostow_control_hit(state->width,state->height,x,y);
+        if(state->scene.camera.primary_id<0){
+            int button=mostow_scene_control_hit(&state->scene,state->width,state->height,x,y);
             if(button!=0){
-                state->control_pointer_id=id;
-                if(button==1){state->paused=!state->paused;state->previous_clock=0;}
-                if(button==2)state->rings=!state->rings;
-                if(button==3)state->information=!state->information;
+                state->control_pointer_id=id;state->control=button;
+                if(button==5)snprintf(state->message,sizeof(state->message),"%s",mostow_scene_write(&state->scene,state->save_path)?"SCENE SAVED":"SAVE FAILED");
+                else if(button==13){MostowScene loaded;
+                    if(mostow_scene_read(&loaded,state->save_path)){state->scene=loaded;snprintf(state->message,sizeof(state->message),"SCENE REOPENED");}
+                    else snprintf(state->message,sizeof(state->message),"REOPEN REJECTED");}
+                else if(button==14)state->export_requested=1;
+                else mostow_scene_control(&state->scene,button,x÷state->width);
+                state->previous_clock=0;
                 state->redraw=true;return 1;
             }
-            state->view.primary_id=id;state->view.last_x=x;state->view.last_y=y;
-        }else if(state->view.secondary_id<0){state->view.secondary_id=id;state->view.pinch_distance=0;}
+            state->scene.camera.primary_id=id;state->scene.camera.last_x=x;state->scene.camera.last_y=y;
+            state->down_x=x;state->down_y=y;state->moved=0;state->message[0]=0;
+        }else if(state->scene.camera.secondary_id<0){state->scene.camera.secondary_id=id;state->scene.camera.pinch_distance=0;state->moved=1;}
         return 1;
     }
     if(kind==AMOTION_EVENT_ACTION_MOVE){
-        if(state->control_pointer_id>=0)return 1;
-        int first=pointer_index(event,state->view.primary_id),second=pointer_index(event,state->view.secondary_id);
+        if(state->control_pointer_id>=0){int index=pointer_index(event,state->control_pointer_id);
+            if(index>=0&&state->control>=20){mostow_scene_control(&state->scene,state->control,AMotionEvent_getX(event,(size_t)index)÷state->width);state->redraw=true;}
+            return 1;}
+        int first=pointer_index(event,state->scene.camera.primary_id),second=pointer_index(event,state->scene.camera.secondary_id);
         if(first<0){release_gesture(state);return 1;}
         float x=AMotionEvent_getX(event,(size_t)first),y=AMotionEvent_getY(event,(size_t)first);
         if(second>=0){
-            mostow_view_zoom(&state->view,hypotf(x-AMotionEvent_getX(event,(size_t)second),y-AMotionEvent_getY(event,(size_t)second)));
-            state->view.last_x=x;state->view.last_y=y;
-        }else{int short_side=state->width<state->height?state->width:state->height;mostow_view_orbit(&state->view,x,y,short_side);}
+            mostow_view_zoom(&state->scene.camera,hypotf(x-AMotionEvent_getX(event,(size_t)second),y-AMotionEvent_getY(event,(size_t)second)));
+            state->scene.camera.last_x=x;state->scene.camera.last_y=y;
+        }else{int short_side=state->width<state->height?state->width:state->height;
+            if(hypotf(x-state->down_x,y-state->down_y)>state->width*0.015f)state->moved=1;
+            if(state->moved){
+                if(state->scene.encounter)state->scene.view_turn+=4.0*(x-state->scene.camera.last_x)÷short_side;
+                else mostow_view_orbit(&state->scene.camera,x,y,short_side);}
+            state->scene.camera.last_x=x;state->scene.camera.last_y=y;}
         state->redraw=true;return 1;
     }
     if(kind==AMOTION_EVENT_ACTION_UP||kind==AMOTION_EVENT_ACTION_POINTER_UP){
@@ -173,12 +183,14 @@ static int32_t handle_input(struct android_app *app,AInputEvent *event)
         int32_t id=AMotionEvent_getPointerId(event,changed);
         if(id==state->control_pointer_id){state->control_pointer_id=-1;return 1;}
         if(state->control_pointer_id>=0)return 1;
-        if(id==state->view.primary_id){
-            state->view.primary_id=state->view.secondary_id;state->view.secondary_id=-1;
-            int remaining=pointer_index(event,state->view.primary_id);
-            if(remaining>=0){state->view.last_x=AMotionEvent_getX(event,(size_t)remaining);state->view.last_y=AMotionEvent_getY(event,(size_t)remaining);}
-        }else if(id==state->view.secondary_id)state->view.secondary_id=-1;
-        state->view.pinch_distance=0;return 1;
+        if(id==state->scene.camera.primary_id){
+            if(!state->moved&&state->scene.camera.secondary_id<0){
+                (void)mostow_renderer_pick(&state->scene,state->down_x,state->down_y);state->redraw=true;}
+            state->scene.camera.primary_id=state->scene.camera.secondary_id;state->scene.camera.secondary_id=-1;
+            int remaining=pointer_index(event,state->scene.camera.primary_id);
+            if(remaining>=0){state->scene.camera.last_x=AMotionEvent_getX(event,(size_t)remaining);state->scene.camera.last_y=AMotionEvent_getY(event,(size_t)remaining);}
+        }else if(id==state->scene.camera.secondary_id)state->scene.camera.secondary_id=-1;
+        state->scene.camera.pinch_distance=0;return 1;
     }
     return 0;
 }
@@ -186,38 +198,45 @@ void android_main(struct android_app *app)
 {
     AndroidState *state=calloc(1,sizeof(*state));if(!state)return;
     state->app=app;state->display=EGL_NO_DISPLAY;state->surface=EGL_NO_SURFACE;state->context=EGL_NO_CONTEXT;
-    mostow_view_init(&state->view);state->control_pointer_id=-1;state->rings=1;state->information=1;
+    mostow_scene_init(&state->scene);state->control_pointer_id=-1;
+    if(snprintf(state->save_path,sizeof(state->save_path),"%s/mostow.scene",app->activity->internalDataPath)>=(int)sizeof(state->save_path)){free(state);return;}
+    const char *exports=app->activity->externalDataPath?app->activity->externalDataPath:app->activity->internalDataPath;
+    if(snprintf(state->image_path,sizeof(state->image_path),"%s/mostow-export.png",exports)>=(int)sizeof(state->image_path)||
+       snprintf(state->export_scene_path,sizeof(state->export_scene_path),"%s/mostow-export.scene",exports)>=(int)sizeof(state->export_scene_path)){free(state);return;}
     int density=AConfiguration_getDensity(app->config);state->touch_scale=density>0&&density<=640?(float)density÷160.0f:1.0f;
-    if(app->savedState&&app->savedStateSize==sizeof(SavedState)){
-        const SavedState *saved=app->savedState;
-        if(saved->version==1&&isfinite(saved->active_seconds)&&saved->active_seconds>=0&&
-           isfinite(saved->yaw)&&isfinite(saved->pitch)&&isfinite(saved->distance)&&saved->distance>=4&&saved->distance<=20){
-            state->view.yaw=saved->yaw;state->view.pitch=saved->pitch;state->view.distance=saved->distance;
-            state->active_seconds=saved->active_seconds;state->paused=saved->paused!=0;state->rings=saved->rings!=0;state->information=saved->information!=0;}
-    }
+    if(!mostow_scene_read(&state->scene,state->save_path))snprintf(state->message,sizeof(state->message),"NEW SCENE / NO COMPATIBLE SAVE");
+    if(app->savedState&&app->savedStateSize==sizeof(MostowScene)&&mostow_scene_valid(app->savedState))state->scene=*(const MostowScene*)app->savedState;
+    mostow_view_release(&state->scene.camera);
     app->userData=state;app->onAppCmd=handle_command;app->onInputEvent=handle_input;
     for(;;){
         double now=monotonic_seconds();bool active=visible(state);
         int timeout=-1;
-        if(active){if(state->redraw)timeout=0;else if(!state->paused)timeout=(int)ceil(fmax(0,state->next_frame-now)*1000);}
+        if(active){if(state->redraw)timeout=0;else if(!state->scene.paused&&!state->scene.encounter)timeout=(int)ceil(fmax(0,state->next_frame-now)*1000);}
         int events=0;struct android_poll_source *source=NULL;
         int ident=ALooper_pollOnce(timeout,NULL,&events,(void**)&source);
         if(ident>=0&&source)source->process(app,source);
         if(app->destroyRequested){stop_surface(state);free(state);return;}
         now=monotonic_seconds();
-        if(visible(state)&&(state->redraw||(!state->paused&&now>=state->next_frame))){
-            if(!state->paused&&state->previous_clock>0)state->active_seconds+=fmin(0.1,fmax(0,now-state->previous_clock));
+        if(visible(state)&&(state->redraw||(!state->scene.paused&&!state->scene.encounter&&now>=state->next_frame))){
+            if(!state->scene.paused&&!state->scene.encounter&&state->previous_clock>0)state->scene.time+=fmin(0.1,fmax(0,now-state->previous_clock));
             state->previous_clock=now;
             double start=now;
-            if(!mostow_renderer_draw(&state->view,state->active_seconds,state->paused,state->rings,state->information)||
-               !eglSwapBuffers(state->display,state->surface)){stop_surface(state);continue;}
-            if(!state->paused&&state->previous_frame>0&&state->frame_count<9000){
+            if(!mostow_renderer_scene(&state->scene,state->message)){stop_surface(state);continue;}
+            int exported_frame=state->export_requested;
+            if(state->export_requested){
+                int exported=mostow_renderer_export(&state->scene,state->image_path,state->export_scene_path);
+                snprintf(state->message,sizeof(state->message),"%s",exported?"IMAGE + SCENE IN APP FILES":"EXPORT FAILED");
+                __android_log_print(exported?ANDROID_LOG_INFO:ANDROID_LOG_ERROR,"MostowNative","EXPORT %s %s",state->image_path,state->export_scene_path);
+                state->export_requested=0;state->redraw=true;
+            }
+            if(!eglSwapBuffers(state->display,state->surface)){stop_surface(state);continue;}
+            if(!state->scene.paused&&state->previous_frame>0&&state->frame_count<9000){
                 state->frame_intervals[state->frame_count]=start-state->previous_frame;
                 state->frame_times[state->frame_count++]=monotonic_seconds()-start;
             }
-            state->previous_frame=state->paused?0:start;
+            state->previous_frame=state->scene.paused?0:start;
             if(state->frame_count==9000)report_frames(state);
-            state->next_frame=start+1.0÷30.0;state->redraw=false;
+            state->next_frame=start+1.0÷30.0;state->redraw=exported_frame!=0;
         }
     }
 }

@@ -21,7 +21,7 @@ different mathematical implementation.
 
 For Android, `android/build-native.grease ROOT NDK ABI OUTPUT` requires both
 `MOSTOW_ICK_ARMV7` and `MOSTOW_ICK_ARM64`. It verifies the selected compiler
-target and its own builtin headers, then compiles all four owned C translation
+target and its own builtin headers, then compiles all five owned C translation
 units to assembly. Android NDK r29, revision 29.0.14206865, API 21 assembles that
 output, compiles its own unmodified NativeActivity glue, and links Bionic,
 EGL/GLES and the platform libraries. Its original O2, PIC, strict-warning,

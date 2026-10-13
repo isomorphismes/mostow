@@ -5,11 +5,60 @@
 #include <GLES2/gl2.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+static int capture(MostowScene *scene,const char *directory,const char *name)
+{
+    char image[1024],record[1024];
+    if(snprintf(image,sizeof(image),"%s/%s.png",directory,name)>=(int)sizeof(image)||
+       snprintf(record,sizeof(record),"%s/%s.scene",directory,name)>=(int)sizeof(record))return 0;
+    return mostow_renderer_scene(scene,NULL)&&mostow_renderer_export(scene,image,record);
+}
+static int acceptance(const char *directory)
+{
+    MostowScene scene;mostow_scene_init(&scene);scene.time=37;scene.paused=1;
+    scene.anchor=(MostowAnchor){100,{0.2,0.3,0.5}};
+    if(!capture(&scene,directory,"sheet-clean"))return 0;
+    unsigned char *first=malloc(576u*1152u*4u),*second=malloc(576u*1152u*4u);
+    if(!first||!second){free(first);free(second);return 0;}
+    glReadPixels(0,0,576,1152,GL_RGBA,GL_UNSIGNED_BYTE,first);
+    mostow_scene_control(&scene,2,0);
+    if(!capture(&scene,directory,"sheet-illustrated")){free(first);free(second);return 0;}
+    glReadPixels(0,0,576,1152,GL_RGBA,GL_UNSIGNED_BYTE,second);
+    if(!memcmp(first,second,576u*1152u*4u)){fprintf(stderr,"FAIL TREATMENT_VISIBLE\n");free(first);free(second);return 0;}
+    memcpy(first,second,576u*1152u*4u);
+    char record[1024];snprintf(record,sizeof(record),"%s/sheet-illustrated.scene",directory);
+    MostowScene restored;
+    if(!mostow_scene_read(&restored,record)||!mostow_renderer_scene(&restored,NULL)){free(first);free(second);return 0;}
+    glReadPixels(0,0,576,1152,GL_RGBA,GL_UNSIGNED_BYTE,second);
+    if(memcmp(first,second,576u*1152u*4u)){fprintf(stderr,"FAIL PIXEL_REOPEN\n");free(first);free(second);return 0;}
+    free(first);free(second);
+    scene.encounter=1;scene.model=0;scene.control_page=2;scene.selected_string=31;
+    if(!capture(&scene,directory,"strings-klein"))return 0;
+    mostow_scene_control(&scene,15,0);
+    if(!capture(&scene,directory,"strings-poincare"))return 0;
+    /* Recording replays the same application-owned control operations as touch. */
+    mostow_scene_init(&scene);scene.paused=1;scene.anchor=(MostowAnchor){100,{0.2,0.3,0.5}};
+    for(unsigned frame=0;frame<72;++frame){
+        if(frame<24)scene.time=frame*1.25;
+        if(frame==12)mostow_scene_control(&scene,2,0);
+        if(frame>=24&&frame<36)scene.camera.yaw+=0.045f;
+        if(frame==24)mostow_scene_control(&scene,11,0);
+        if(frame>=36&&frame<48)mostow_scene_control(&scene,20,(float)(frame-36)÷12);
+        if(frame==48){mostow_scene_control(&scene,1,0);scene.control_page=2;}
+        if(frame==60)mostow_scene_control(&scene,15,0);
+        if(frame>=60)mostow_scene_control(&scene,21,(float)(frame-59)÷24);
+        char name[64];snprintf(name,sizeof(name),"interaction-%03u",frame);
+        if(!capture(&scene,directory,name))return 0;
+    }
+    fprintf(stderr,"PASS RENDER treatment-visible exact-framebuffer-reopen scripted-control-recording\n");return 1;
+}
 
 int main(int argc,char **argv)
 {
     const int width=576,height=1152;
-    double seconds=argc>2?strtod(argv[2],NULL):0.0;
+    int suite=argc==3&&!strcmp(argv[1],"--acceptance");
+    double seconds=argc>2&&!suite?strtod(argv[2],NULL):0.0;
     if(argc<2)return 2;
     PFNEGLGETPLATFORMDISPLAYEXTPROC platform=(PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
     EGLDisplay display=platform?platform(EGL_PLATFORM_SURFACELESS_MESA,EGL_DEFAULT_DISPLAY,NULL):eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -28,6 +77,7 @@ int main(int argc,char **argv)
     if(argc>3)view.yaw=(float)strtod(argv[3],NULL);
     if(argc>4)view.pitch=(float)strtod(argv[4],NULL);
     if(!mostow_renderer_start(width,height)){fprintf(stderr,"START_FAILED\n");return 1;}
+    if(suite)return acceptance(argv[2])?0:1;
     if(!mostow_renderer_draw(&view,seconds,0,1,1)){fprintf(stderr,"DRAW_FAILED\n");return 1;}
     unsigned char *pixels=malloc((size_t)width*height*4);
     if(!pixels)return 2;

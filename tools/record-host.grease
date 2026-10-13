@@ -1,0 +1,10 @@
+#!/usr/bin/env grease
+var root = $(git -C "$[ARGV[0]]" rev-parse --show-toplevel)
+var output = "$root/build/host/encounters"
+var kitchen = ENV.MOSTOW_KITCHEN
+test $(git -C "$kitchen" rev-parse HEAD) = df14daf8cc612283ea210f206f0097a31db122a0
+mkdir -p "$output"
+"$root/build/host/render-mostow" --acceptance "$output"
+sh "$kitchen/tasks/movie-from-stills/build.sh" "$output/interaction-%03d.png" 12 "$output/interaction-host.mp4"
+ffmpeg -hide_banner -loglevel error -i "$output/interaction-host.mp4" -f null -
+printf '\033[32mPASS\033[0m shared-renderer comparison, PNG replay and decoded host interaction recording\n'

@@ -51,10 +51,11 @@ jobs:
         id: grease
       - uses: isomorphisms/ai-ci/ick-host@4ea071a96239f3a29ca6d98454feb59947d87cfe
         id: ick
-      - run: sudo apt-get install -y libegl-dev libgles-dev libgl1-mesa-dri
+      - run: sudo apt-get install -y libegl-dev libgles-dev libgl1-mesa-dri ffmpeg
       - name: Execute the existing geometry and negative cases
         env:
           MOSTOW_HOST_COMPILER: ${{ steps.ick.outputs.compiler }}
+          MOSTOW_GREASE: ${{ steps.grease.outputs.executable }}
         run: '"${{ steps.grease.outputs.executable }}" tools/test-host.grease "$GITHUB_WORKSPACE"'
       - name: Regenerate the fixture with its unchanged acceptance bounds
         env:
@@ -74,10 +75,27 @@ jobs:
           EGL_PLATFORM: surfaceless
           LIBGL_ALWAYS_SOFTWARE: '1'
         run: build/host/render-mostow build/host/moving.ppm 20 0.3 0.4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: isomorphisms/kitchen
+          ref: df14daf8cc612283ea210f206f0097a31db122a0
+          path: .movie-kitchen
+          persist-credentials: false
+      - name: Replay both interactive encounters and verify framebuffer reopen
+        env:
+          EGL_PLATFORM: surfaceless
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          MOSTOW_KITCHEN: ${{ github.workspace }}/.movie-kitchen
+        run: '"${{ steps.grease.outputs.executable }}" tools/record-host.grease "$GITHUB_WORKSPACE"'
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: mostow-host-render-evidence
-          path: build/host/*.ppm
+          path: |
+            build/host/*.ppm
+            build/host/encounters/sheet-*.png
+            build/host/encounters/strings-*.png
+            build/host/encounters/*.scene
+            build/host/encounters/interaction-host.mp4
           if-no-files-found: error
 
   paired-packages:

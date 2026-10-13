@@ -3,10 +3,12 @@
 Interactive mathematics from a living hyperbolic sheet and visible gluing
 through surface flexibility, local/coarse distortion, and Mostow rigidity.
 
-The first implemented slice is a radius-2 ruffled patch, built for the MIRO A1
-and paired MIRO C67. It supports one-finger orbit, two-finger pinch, pause,
-intrinsic ring shading, and explicit current L/K diagnostics. Physical-device
-acceptance remains pending; host rendering is not phone evidence.
+Two encounters share inspectable semantic state: a radius-2 living sheet with
+clean/ink rendering and explanatory normals, and boundary-map string art with
+linked Klein/Poincaré views. Phone controls include selection, orbit/pinch,
+pause/direct scrub, lighting, map parameters, save/reopen and PNG export with
+a companion scene. See [interaction and replay](notes/interactive-encounters.md).
+Physical-device acceptance remains pending; host rendering is not phone evidence.
 
 The mathematical source is compositional ICKY C compiled directly by ICK,
 with NDK assembly and platform linking. See [source boundary](notes/source-boundary.md),
@@ -46,7 +48,7 @@ the canonical packager, and emits per-APK receipts. It does not install or
 qualify either phone. The producer preflight additionally requires Mostow's
 package/signer registration in merged ai-ci policy.
 
-The package is `org.isomorphisms.mostow`, versionCode 1, versionName 0.1.
+The package is `org.isomorphisms.mostow`, versionCode 2, versionName 0.2.
 The certificate is the existing public development identity used by Seifert,
 not a new locally generated key. Future updates must preserve package and
 signer and use a nondecreasing versionCode.

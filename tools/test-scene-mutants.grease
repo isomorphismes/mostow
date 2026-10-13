@@ -1,0 +1,22 @@
+#!/usr/bin/env grease
+var root = $(git -C "$[ARGV[0]]" rev-parse --show-toplevel)
+var compiler = ENV.MOSTOW_HOST_COMPILER
+var revision = $(git -C "$root" rev-parse HEAD)
+var output = "$root/build/host/mutants"
+mkdir -p "$output"
+# These mutate the implementation, not the geometric oracle or expected result.
+for mutant in ([['flat-poincare', 's/return model?mostow_klein_to_poincare(chord):chord;/return model?chord:chord;/', 'CIRCLE_INCIDENCE'],
+                ['reversed-taxonomy', 's/return exact_discriminant<0?MOSTOW_ELLIPTIC:MOSTOW_HYPERBOLIC;/return exact_discriminant<0?MOSTOW_HYPERBOLIC:MOSTOW_ELLIPTIC;/', 'CLASSIFICATION']]) {
+  var name = mutant[0]
+  sed "$[mutant[1]]" "$root/icky/mostow_scene.c" > "$output/$name.c"
+  "$compiler" -fno-link-libatomic -std=c11 -O2 -Wall -Wextra -Werror -Wpedantic \
+    "-DMOSTOW_SOURCE_REVISION=\"$revision\"" -I "$root/native" -I "$root/fixtures" \
+    "$root/icky/mostow_sheet.c" "$output/$name.c" "$root/native/mostow_view.c" \
+    "$root/native/test_mostow_scene.c" -lm -o "$output/$name"
+  if "$output/$name" "$root/fixtures/mobius-classification.tsv" "$output/$name.scene" > "$output/$name.log" 2>&1 {
+    printf '\033[31mFAIL\033[0m implementation mutant passed: %s\n' "$name"
+    exit 1
+  }
+  rg "FAIL $[mutant[2]]" "$output/$name.log"
+}
+printf '\033[32mPASS\033[0m altered model and reversed taxonomy rejected by geometric/exact tests\n'
