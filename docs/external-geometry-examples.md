@@ -44,15 +44,16 @@ its nested dependencies. The untouched source-import draft remains separate.
 
 ### Publication and acceptance boundaries
 
-Draft PR #6 carries copied source examples and gitlinks. The provenance
-manifest requires correction before any such files can be merged. In particular,
-four `COPYING` entries identify a license file from a *different* project:
-SnapPy's path points to HyperRogue's `COPYING`; the Thurston geometries,
-CirclePack and Stitch Meshing paths point to the crochet-simulator `LICENSE`.
-A generic license text is not evidence of the package's actual licensing.
-Correct the per-project notices and audit redistribution, including
-third-party libraries, before importing copies. Any executable integration
-also needs its own tests and independent acceptance.
+Draft PR #6 carries copied source examples and gitlinks. Its manifest
+explicitly identifies the different origin of four auxiliary `COPYING` texts:
+SnapPy's path uses HyperRogue's generic license file; Thurston geometries,
+CirclePack and Stitch Meshing paths use the crochet-simulator license text.
+These sources are **not falsely identified** as original package license
+files in the manifest. CirclePack's accompanying license notice makes this
+distinction explicit. Nevertheless, a borrowed GPL text is not itself a
+package-specific grant: verify upstream declarations and applicable GPL/LGPL
+versions, copyright notices, and nested dependencies before redistribution.
+Any executable integration also needs its own tests and independent acceptance.
 
 ## External sources and examples
 
