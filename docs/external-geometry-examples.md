@@ -23,32 +23,46 @@ are different subjects.
 | Later | Mapping classes/laminations and Regina topology checks | Track marked curves and triangulations while keeping the geometric structures they do not determine explicit. |
 | Illustration | Hatcher/Francis/Casselman construction-driven motion | Derive linked views and interactions from the same mathematical construction. |
 
-Relevant retained work:
-[living-sheet branch](https://github.com/isomorphismes/mostow/tree/9c4bfd742f774c9b309df3acce049fc1aa930bf3)
-and
-[figure-eight shape/cusp branch](https://github.com/isomorphismes/mostow/tree/d20fe7883234f18bdd3f24ae58069d5d5da1ff3b).
-These are unmerged source references at the inspected revisions, not accepted
-intrinsic navigation or physical-model evidence.
+Implemented in main: the [living-sheet encounter](../notes/interactive-encounters.md)
+and [figure-eight cusp-completeness experiment](../notes/figure-eight-completeness.md).
+Neither establishes the general Mostow rigidity theorem; handset and
+interactive acceptance remain separate from the reference study.
 
-## Explicit code
+## Pinned upstream source references
 
-The repository now contains 80 original source files from twelve source sets.
-Start with [the code index](../examples/external/README.md) and
-[the exact source manifest](../examples/external/sources.tsv),
-[the official archive manifest](../examples/external/archive-sources.tsv), and
-[15 pinned complete source repositories](../sources/external/README.md).
-These include explicit crochet relaxation, hyperbolic geodesic flow, Lorentz
-camera transformations, circle packing, intrinsic triangulations, laminations
-and example three-manifold constructions. Their execution remains unverified.
+[15 exact upstream revision records](external-geometry-source-pins.tsv) name
+the original repositories, commits and proposed local submodule paths.
+These are **metadata and links only**. The 15 source trees are not mounted
+as Git submodules here; no external code, headers, licenses or binaries are
+copied by this documentation change, and no new runtime dependency exists.
+
+The pinned references were gathered and checked for existence during draft
+[PR #6](https://github.com/isomorphismes/mostow/pull/6).
+Existence and identity are not source-license approval or executable acceptance.
+Before redistribution or execution, inspect each original project license and
+its nested dependencies. The untouched source-import draft remains separate.
+
+### Publication and acceptance boundaries
+
+Draft PR #6 carries copied source examples and gitlinks. Its manifest
+explicitly identifies the different origin of four auxiliary `COPYING` texts:
+SnapPy's path uses HyperRogue's generic license file; Thurston geometries,
+CirclePack and Stitch Meshing paths use the crochet-simulator license text.
+These sources are **not falsely identified** as original package license
+files in the manifest. CirclePack's accompanying license notice makes this
+distinction explicit. Nevertheless, a borrowed GPL text is not itself a
+package-specific grant: verify upstream declarations and applicable GPL/LGPL
+versions, copyright notices, and nested dependencies before redistribution.
+Any executable integration also needs its own tests and independent acceptance.
 
 ## External sources and examples
 
-These are source references and study examples, checked on 14 October 2026.
-The “local study” column proposes work; it does not report an implemented
-demonstration, an executed external program, or a physical model. Links preserve
-the authors' attribution. Selected original source files, licenses and exact provenance now live in
-[explicit code examples](../examples/external/README.md). Photographs and book
-chapters are not copied.
+These source references and study examples were collected on 14 October 2026.
+The “local study” column proposes work: it does not report an implemented
+demonstration, an executed external program or a physical model. Links retain
+the authors' attribution. Original sources remain in their upstream repositories;
+the separate [source-import draft](https://github.com/isomorphismes/mostow/pull/6)
+is not part of this documentation-only change.
 
 ### Physical construction and realization
 
