@@ -17,3 +17,5 @@ Visual experiments should keep mathematical statements separate from analogies, 
 ## External geometry examples
 
 See the [source catalogue and project examples](docs/external-geometry-examples.md), including physical constructions, intrinsic geometry engines, discrete geometry and mathematical illustration references.
+
+Actual upstream source files are available in [explicit code examples](examples/external/README.md), with exact revisions, original Git blob identities and licenses.
