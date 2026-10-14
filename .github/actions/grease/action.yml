@@ -1,0 +1,36 @@
+name: Verified Grease runtime
+description: Restore the exact Grease owner artifact and unchanged launcher.
+outputs:
+  executable:
+    description: Absolute path to the verified Grease launcher.
+    value: ${{ github.workspace }}/.grease-runtime/grease
+runs:
+  using: composite
+  steps:
+    - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+      with:
+        repository: dilapidated-shed/grease
+        run-id: 37478624499
+        artifact-ids: 11419719229
+        merge-multiple: true
+        github-token: ${{ github.token }}
+        path: .grease-runtime
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      with:
+        repository: dilapidated-shed/grease
+        ref: ba869518c7d850de6c47d8c6234654575e264e6c
+        path: .grease-owner
+        persist-credentials: false
+    - name: Check the Grease implementation bytes
+      shell: bash
+      run: echo '7e31cd05b7a9d8fb2a4a9e003a7f3fcb0159138506d17f0fb28da8cbe22aa85c  .grease-runtime/_bin/cxx-asan/ysh' | sha256sum -c -
+    - name: Restore the unchanged owner launcher
+      shell: bash
+      run: sed -n '123,125p' .grease-owner/phone/build-armv7-runtime.sh > .grease-runtime/grease
+    - name: Install the engine at its owner launcher path
+      shell: bash
+      run: cp .grease-runtime/_bin/cxx-asan/ysh .grease-runtime/ysh
+    - name: Restore executable modes
+      shell: bash
+      run: chmod +x .grease-runtime/grease .grease-runtime/ysh
+

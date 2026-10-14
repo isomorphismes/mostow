@@ -1,0 +1,7 @@
+#!/usr/bin/env grease
+# The merged producer exposes only a fixed cc entrypoint.
+# This declared adapter invokes the selected ICK driver without editing source.
+var compiler = ENV.MOSTOW_HOST_COMPILER
+test -x "$compiler"
+exec "$compiler" -fno-link-libatomic @ARGV
+

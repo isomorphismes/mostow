@@ -1,0 +1,10 @@
+#!/usr/bin/env grease
+var root = $(git -C "$[ARGV[0]]" rev-parse --show-toplevel)
+var compiler = ENV.MOSTOW_HOST_COMPILER
+mkdir -p "$root/build/host"
+test -x "$compiler"
+"$compiler" -fno-link-libatomic -std=c11 -O2 -Wall -Wextra -Werror -Wpedantic -DMOSTOW_GENERATOR -I "$root/native" \
+  "$root/icky/mostow_sheet.c" "$root/icky/realize_sheet.c" -lm -o "$root/build/host/realize-sheet"
+"$root/build/host/realize-sheet" > "$root/build/host/sheet_base.candidate.inc"
+mv "$root/build/host/sheet_base.candidate.inc" "$root/fixtures/sheet_base.inc"
+printf '\033[32mPASS\033[0m accepted base fixture\n'

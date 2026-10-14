@@ -1,0 +1,19 @@
+#!/usr/bin/env grease
+var root = $(git -C "$[ARGV[0]]" rev-parse --show-toplevel)
+var compiler = ENV.MOSTOW_HOST_COMPILER
+var revision = $(git -C "$root" rev-parse HEAD)
+mkdir -p "$root/build/host"
+test -x "$compiler"
+"$compiler" -fno-link-libatomic -std=c11 -O2 -Wall -Wextra -Werror -Wpedantic -I "$root/native" -I "$root/fixtures" \
+  "$root/icky/mostow_sheet.c" "$root/native/mostow_view.c" "$root/native/test_mostow_sheet.c" \
+  -lm -o "$root/build/host/test-mostow"
+"$root/build/host/test-mostow"
+"$compiler" -fno-link-libatomic -std=c11 -O2 -Wall -Wextra -Werror -Wpedantic \
+  "-DMOSTOW_SOURCE_REVISION=\"$revision\"" -I "$root/native" -I "$root/fixtures" \
+  "$root/icky/mostow_sheet.c" "$root/icky/mostow_scene.c" "$root/native/mostow_view.c" \
+  "$root/native/test_mostow_scene.c" -lm -o "$root/build/host/test-scene"
+"$root/build/host/test-scene" "$root/fixtures/mobius-classification.tsv" "$root/build/host/reopen.scene"
+var grease = ENV.MOSTOW_GREASE
+"$grease" "$root/tools/test-scene-mutants.grease" "$root"
+python3 "$root/tools/test_normalize_icky_c.py"
+printf '\033[32mPASS\033[0m direct ICK host geometry and retained legacy adapter controls\n'

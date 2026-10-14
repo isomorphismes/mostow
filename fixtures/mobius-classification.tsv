@@ -1,0 +1,11 @@
+# name a b c d expected fixed-points (-1 all, -2 outside supported group)
+identity 1 0 0 1 IDENTITY -1
+negative_identity -1 0 0 -1 IDENTITY -1
+elliptic 0 -1 1 0 ELLIPTIC 0
+parabolic 1 1 0 1 PARABOLIC 1
+negative_parabolic -1 -1 0 -1 PARABOLIC 1
+inverse_parabolic 1 -1 0 1 PARABOLIC 1
+hyperbolic 2 1 1 1 HYPERBOLIC 2
+negative_hyperbolic -2 -1 -1 -1 HYPERBOLIC 2
+reflection 1 0 0 -1 REVERSED -2
+singular 1 0 0 0 SINGULAR -2

@@ -1,0 +1,38 @@
+#!/usr/bin/env grease
+# ROOT FLEXIBLE_PIPES POLICY ANDROID_NDK_CHECKOUT OUTPUT_DIR
+var root = $(git -C "$[ARGV[0]]" rev-parse --show-toplevel)
+var pipes = ARGV[1]
+var policy = ARGV[2]
+var substrate = ARGV[3]
+var output = ARGV[4]
+test $(git -C "$pipes" rev-parse HEAD) = 9775aa324f523cbc6c758e89461915484a5a0fc7
+test $(git -C "$policy" rev-parse HEAD) = 01608a2493fa409463f70e8fbfd8a123ef59ee85
+test $(git -C "$substrate" rev-parse HEAD) = 7c61ee43e75f7c2dab9288edb0e10055898b36e6
+var grease = ENV.MOSTOW_GREASE
+test -x "$grease"
+var grease_dir = $(dirname "$grease")
+test -x "$grease_dir/grease"
+test -x "$root/tools/compile-policy.grease"
+var bin = "$root/build/policy-compiler"
+mkdir -p "$bin"
+# The fixed external cc name is explicit: it resolves only to the Grease ICK
+# adapter. Neither the merged policy nor its verifier source is modified.
+ln -sf "$root/tools/compile-policy.grease" "$bin/cc"
+setglobal ENV.PATH = "$bin:$grease_dir:$[ENV.PATH]"
+setglobal ENV.AICI_CHECKOUT = policy
+setglobal ENV.ANDROID_NDK_CHECKOUT = substrate
+setglobal ENV.ANDROID_APP_ROOT = root
+setglobal ENV.ANDROID_SIGNING_LANE = 'test'
+setglobal ENV.ANDROID_REQUIRE_NO_DEX = '1'
+for cell in ([['armeabi-v7a', 'mostow-miro-a1-armeabi-v7a'],
+              ['arm64-v8a', 'mostow-miro-c67-arm64-v8a']]) {
+  var abi = cell[0]
+  var name = cell[1]
+  setglobal ENV.ANDROID_EXPECTED_ABI = abi
+  setglobal ENV.ANDROID_APK = "$output/$name.apk"
+  setglobal ENV.ANDROID_PACKAGER_RECEIPT = "$output/$name.receipt.tsv"
+  setglobal ENV.ANDROID_PRODUCER_RECEIPT_OUTPUT = "$output/$abi-producer.tsv"
+  # Each ABI keeps its own run directory even inside one GitHub Actions run.
+  bash "$pipes/scripts/run-android-apk-preflight" --runs-root "$output/pipeline/$abi"
+}
+
