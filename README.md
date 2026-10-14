@@ -58,3 +58,11 @@ The package is `org.isomorphisms.mostow`, versionCode 3, versionName 0.3.
 The certificate is the existing public development identity used by Seifert,
 not a new locally generated key. Future updates must preserve package and
 signer and use a nondecreasing versionCode.
+
+## External geometry references
+
+The [external geometry catalogue](docs/external-geometry-examples.md) describes
+constructions, intrinsic navigation, topology, illustration and physical models.
+[Upstream source revision pins](docs/external-geometry-source-pins.tsv) are links
+and metadata only. This repository does not vendor those external engines or
+claim their execution, redistribution review, or independent acceptance.
