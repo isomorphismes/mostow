@@ -1,0 +1,16 @@
+module M004Shape
+
+-- Explicit host prototype, not a Float16 default or an Android ABI claim.
+PrototypeScalar : Type
+PrototypeScalar = Double
+
+record IdealShape where
+  constructor ShapeInUpperHalfPlane
+  real_part : PrototypeScalar
+  imaginary_part : PrototypeScalar
+
+complete_ideal_shape : IdealShape
+complete_ideal_shape = ShapeInUpperHalfPlane 0.5 (sqrt 3 ÷ 2)
+
+-- The native encounter supplies the validation, four logarithmic equations,
+-- and visible comparison. This source has not been freshly compiler-checked.

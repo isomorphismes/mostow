@@ -38,7 +38,7 @@ mkdir -p $(dirname "$output")
 # Compile original owned Icky C; the NDK receives assembly and its own glue C.
 # This raw producer's existing profile is API 21, O2, PIC, strict warnings,
 # ARM A32/NEON/softfp or AArch64 with the Android-reserved x18 untouched.
-for unit in ([['icky/mostow_sheet.c', 'sheet'], ['icky/mostow_scene.c', 'scene'], ['native/mostow_view.c', 'view'],
+for unit in ([['icky/mostow_sheet.c', 'sheet'], ['icky/mostow_scene.c', 'scene'], ['icky/mostow_m004.c', 'm004'], ['native/mostow_view.c', 'view'],
               ['android/mostow_renderer.c', 'renderer'], ['android/mostow_android.c', 'activity']]) {
   var source = unit[0]
   var name = unit[1]
@@ -55,7 +55,7 @@ for unit in ([['icky/mostow_sheet.c', 'sheet'], ['icky/mostow_scene.c', 'scene']
 }
 "$clang" -std=c11 -O2 -fPIC -Wall -Wextra -Wno-format-pedantic -I "$glue" \
   -c "$glue/android_native_app_glue.c" -o "$root/build/$abi/glue.o"
-"$clang" --ld-path="$tools/ld.lld" -shared "$root/build/$abi/sheet.o" "$root/build/$abi/scene.o" "$root/build/$abi/view.o" "$root/build/$abi/renderer.o" \
+"$clang" --ld-path="$tools/ld.lld" -shared "$root/build/$abi/sheet.o" "$root/build/$abi/scene.o" "$root/build/$abi/m004.o" "$root/build/$abi/view.o" "$root/build/$abi/renderer.o" \
   "$root/build/$abi/activity.o" "$root/build/$abi/glue.o" -Wl,--no-undefined -Wl,-soname,libmostow.so \
   -Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384 -landroid -llog -lEGL -lGLESv2 -lm -o "$output"
 "$tools/llvm-strip" --strip-unneeded "$output"

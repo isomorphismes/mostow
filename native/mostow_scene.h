@@ -2,6 +2,7 @@
 #define MOSTOW_SCENE_H
 #include "mostow.h"
 #include "mostow_view.h"
+#include "mostow_m004.h"
 #ifndef MOSTOW_SOURCE_REVISION
 #define MOSTOW_SOURCE_REVISION "unbound-development-source"
 #endif
@@ -25,6 +26,7 @@ typedef struct {
     int32_t encounter,model,illustrated,paused,rings,mesh,normal,information;
     int32_t selected_string,preset,control_page,map_parameter;
     MostowAnchor anchor;
+    MostowM004Experiment rigidity;
 } MostowScene;
 typedef struct {
     uint32_t identity;

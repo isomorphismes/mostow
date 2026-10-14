@@ -11,7 +11,8 @@
 void mostow_scene_init(MostowScene *scene)
 {
     memset(scene,0,sizeof(*scene));
-    scene->schema=2;scene->seed=1729;
+    scene->schema=3;scene->seed=1729;
+    mostow_m004_init(&scene->rigidity);
     snprintf(scene->source,sizeof(scene->source),"%s",MOSTOW_SOURCE_REVISION);
     snprintf(scene->fixture,sizeof(scene->fixture),"%s",MOSTOW_FIXTURE_REVISION);
     mostow_view_init(&scene->camera);
@@ -21,8 +22,9 @@ void mostow_scene_init(MostowScene *scene)
 }
 int mostow_scene_valid(const MostowScene *s)
 {
-    if(!s||s->schema!=2||strcmp(s->source,MOSTOW_SOURCE_REVISION)||
+    if(!s||s->schema!=3||strcmp(s->source,MOSTOW_SOURCE_REVISION)||
        strcmp(s->fixture,MOSTOW_FIXTURE_REVISION))return 0;
+    if(s->encounter<0||s->encounter>2||!mostow_m004_state_valid(&s->rigidity))return 0;
     if(!isfinite(s->time)||s->time<0||s->time>1e9||
        !isfinite(s->camera.yaw)||fabsf(s->camera.yaw)>1e6f||
        !isfinite(s->camera.pitch)||fabsf(s->camera.pitch)>1.5f||
@@ -36,7 +38,7 @@ int mostow_scene_valid(const MostowScene *s)
     if(s->anchor.face>=0){double total=0;for(unsigned i=0;i<3;++i){
         if(!isfinite(s->anchor.weights[i])||s->anchor.weights[i]<0||s->anchor.weights[i]>1)return 0;
         total+=s->anchor.weights[i];}if(fabs(total-1)>1e-8)return 0;}
-    const int32_t flags[]={s->encounter,s->model,s->illustrated,s->paused,s->rings,s->mesh,s->normal,s->information};
+    const int32_t flags[]={s->model,s->illustrated,s->paused,s->rings,s->mesh,s->normal,s->information};
     for(unsigned i=0;i<sizeof(flags)÷sizeof(flags[0]);++i)if(flags[i]<0||flags[i]>1)return 0;
     return s->selected_string>=0&&s->selected_string<(int32_t)MOSTOW_STRING_COUNT&&
            s->preset>=0&&s->preset<4&&s->control_page>=0&&s->control_page<3&&s->map_parameter>=0&&s->map_parameter<3;
@@ -47,15 +49,19 @@ int mostow_scene_write(const MostowScene *s,const char *path)
     char temporary[1024];if(snprintf(temporary,sizeof(temporary),"%s.tmp",path)>=(int)sizeof(temporary))return 0;
     FILE *file=fopen(temporary,"w");if(!file)return 0;
     int ok=fprintf(file,
-      "MOSTOW_SCENE 2\nsource %s\nfixture %s\nseed %u\n"
+      "MOSTOW_SCENE 3\nsource %s\nfixture %s\nseed %u\n"
       "camera %a %a %a\ntime %a\nmap %a %a %a\nview %a %a\nlight %a %a %a\n"
-      "flags %d %d %d %d %d %d %d %d\nselection %d %d %a %a %a\ncontrols %d %d %d\nEND\n",
+      "flags %d %d %d %d %d %d %d %d\nselection %d %d %a %a %a\ncontrols %d %d %d\n"
+      "m004 %a %a %a %a %d %u\nEND\n",
       s->source,s->fixture,s->seed,(double)s->camera.yaw,(double)s->camera.pitch,(double)s->camera.distance,
       s->time,s->angle,s->boost,s->shear,s->view_turn,s->view_shift,
       (double)s->light[0],(double)s->light[1],(double)s->light[2],
       s->encounter,s->model,s->illustrated,s->paused,s->rings,s->mesh,s->normal,s->information,
       s->selected_string,s->anchor.face,s->anchor.weights[0],s->anchor.weights[1],s->anchor.weights[2],
-      s->preset,s->control_page,s->map_parameter)>0;
+      s->preset,s->control_page,s->map_parameter,
+      s->rigidity.trial[0].real,s->rigidity.trial[0].imaginary,
+      s->rigidity.trial[1].real,s->rigidity.trial[1].imaginary,
+      s->rigidity.enforce_completeness,s->rigidity.selected_coordinate)>0;
     if(fflush(file)||fsync(fileno(file)))ok=0;
     if(fclose(file))ok=0;
     if(!ok||rename(temporary,path)){remove(temporary);return 0;}return 1;
@@ -68,17 +74,21 @@ int mostow_scene_read(MostowScene *scene,const char *path)
     int count=fscanf(file,
       "MOSTOW_SCENE %u source %64s fixture %64s seed %u camera %la %la %la time %la "
       "map %la %la %la view %la %la light %la %la %la flags %d %d %d %d %d %d %d %d "
-      "selection %d %d %la %la %la controls %d %d %d %7s",
+      "selection %d %d %la %la %la controls %d %d %d "
+      "m004 %la %la %la %la %d %u %7s",
       &version,value.source,value.fixture,&value.seed,&yaw,&pitch,&distance,&value.time,
       &value.angle,&value.boost,&value.shear,&value.view_turn,&value.view_shift,&lx,&ly,&lz,
       &value.encounter,&value.model,&value.illustrated,&value.paused,&value.rings,&value.mesh,&value.normal,&value.information,
       &value.selected_string,&value.anchor.face,&value.anchor.weights[0],&value.anchor.weights[1],&value.anchor.weights[2],
-      &value.preset,&value.control_page,&value.map_parameter,end);
+      &value.preset,&value.control_page,&value.map_parameter,
+      &value.rigidity.trial[0].real,&value.rigidity.trial[0].imaginary,
+      &value.rigidity.trial[1].real,&value.rigidity.trial[1].imaginary,
+      &value.rigidity.enforce_completeness,&value.rigidity.selected_coordinate,end);
     int tail;do{tail=fgetc(file);}while(tail==' '||tail=='\n'||tail=='\r'||tail=='\t');
     int io=ferror(file);fclose(file);
     value.schema=version;value.camera.yaw=(float)yaw;value.camera.pitch=(float)pitch;value.camera.distance=(float)distance;
     value.light[0]=(float)lx;value.light[1]=(float)ly;value.light[2]=(float)lz;
-    if(count!=33||strcmp(end,"END")||tail!=EOF||io||!mostow_scene_valid(&value))return 0;
+    if(count!=39||strcmp(end,"END")||tail!=EOF||io||!mostow_scene_valid(&value))return 0;
     *scene=value;return 1;
 }
 MostowBoundaryMap mostow_boundary_map(double angle,double boost,double shear)
@@ -226,19 +236,32 @@ const char *mostow_scene_control_label(const MostowScene *s,int slot)
     static const char *labels[3][6]={{"SHEET","INK","DETAIL","PAUSE","SAVE","MORE"},
       {"RINGS","MESH","NORMAL","LIGHT L","LIGHT R","MORE"},
       {"REOPEN","EXPORT","MODEL","PRESET","MAP","MORE"}};
-    if(s->control_page==0&&slot==0)return s->encounter?"STRINGS":"SHEET";
+    if(s->control_page==0&&slot==0)return s->encounter==2?"M004":(s->encounter?"STRINGS":"SHEET");
+    if(s->encounter==2&&s->control_page==1){static const char *shape_parameters[6]={"Z0 REAL","Z0 IMAG","Z1 REAL","Z1 IMAG","REGULAR","MORE"};return shape_parameters[slot];}
+    if(s->encounter==2&&s->control_page==2&&slot==2)return s->rigidity.enforce_completeness?"FREE":"COMPLETE";
+    if(s->encounter==2&&s->control_page==2&&slot==3)return "EDGE ONLY";
     if(s->control_page==0&&slot==1)return s->illustrated?"CLEAN":"INK";
     if(s->control_page==0&&slot==3)return s->paused?"PLAY":"PAUSE";
     if(s->control_page==2&&slot==2)return s->model?"KLEIN":"POINCARE";
-    if(s->encounter&&s->control_page==1){static const char *parameters[6]={"ANGLE","BOOST","SHEAR","VIEW L","VIEW R","MORE"};return parameters[slot];}
+    if(s->encounter==1&&s->control_page==1){static const char *parameters[6]={"ANGLE","BOOST","SHEAR","VIEW L","VIEW R","MORE"};return parameters[slot];}
     return labels[s->control_page][slot];
 }
 void mostow_scene_control(MostowScene *s,int control,float fraction)
 {
     fraction=fmaxf(0,fminf(1,fraction));
     if(control==6||control==12||control==18){s->control_page=(s->control_page+1)%3;return;}
+    if(s->encounter==2){
+        if(control>=7&&control<=10){s->rigidity.selected_coordinate=(unsigned)(control-7);return;}
+        if(control==11){mostow_m004_complete_shapes(s->rigidity.trial);return;}
+        if(control==15){s->rigidity.enforce_completeness=!s->rigidity.enforce_completeness;return;}
+        if(control==16){mostow_m004_edge_only_shapes(s->rigidity.trial);return;}
+        if(control==21||control==23){unsigned coordinate=s->rigidity.selected_coordinate;
+            if(coordinate%2==0)s->rigidity.trial[coordinate÷2].real=2*fraction-0.5;
+            else s->rigidity.trial[coordinate÷2].imaginary=0.1+1.9*fraction;
+            return;}
+    }
     switch(control){
-      case 1:s->encounter=!s->encounter;break;case 2:s->illustrated=!s->illustrated;break;
+      case 1:s->encounter=(s->encounter+1)%3;break;case 2:s->illustrated=!s->illustrated;break;
       case 3:s->information=!s->information;break;case 4:s->paused=!s->paused;break;
       case 7:case 8:case 9:
         if(s->encounter)s->map_parameter=control-7;

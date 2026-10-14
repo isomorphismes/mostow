@@ -3,9 +3,12 @@
 Interactive mathematics from a living hyperbolic sheet and visible gluing
 through surface flexibility, local/coarse distortion, and Mostow rigidity.
 
-Two encounters share inspectable semantic state: a radius-2 living sheet with
+Three encounters share inspectable semantic state: a radius-2 living sheet with
 clean/ink rendering and explanatory normals, and boundary-map string art with
-linked Klein/Poincaré views. Phone controls include selection, orbit/pinch,
+linked Klein/Poincaré views, and a figure-eight completeness encounter with
+freely varied ideal shapes, edge/cusp residuals and a retained complete
+reference. See [the figure-eight mathematical boundary](notes/figure-eight-completeness.md).
+Phone controls include selection, orbit/pinch,
 pause/direct scrub, lighting, map parameters, save/reopen and PNG export with
 a companion scene. See [interaction and replay](notes/interactive-encounters.md).
 Physical-device acceptance remains pending; host rendering is not phone evidence.
@@ -31,8 +34,10 @@ The reading notes are:
 - [Hyperbolic crochet](books/hyperbolic-crochet.md)
 - [Papadopoulos on quasiconformal geometry](books/papadopoulos-quasiconformal.md)
 
-The full staged design is in [STAR M1](notes/STAR-M1.md). Its later gluing, FN, coarse-map, tetrahedral,
-and boundary encounters are planned, not implemented by this first slice.
+The full staged design is in [STAR M1](notes/STAR-M1.md). General gluing, FN,
+coarse-map and boundary encounters remain planned. The implemented `m004`
+shape experiment uses a sourced fixed equation matrix; it does not certify
+face-pairing topology or the general rigidity theorem.
 
 ## Build and evidence boundaries
 
@@ -49,7 +54,7 @@ the canonical packager, and emits per-APK receipts. It does not install or
 qualify either phone. The producer preflight additionally requires Mostow's
 package/signer registration in merged ai-ci policy.
 
-The package is `org.isomorphisms.mostow`, versionCode 2, versionName 0.2.
+The package is `org.isomorphisms.mostow`, versionCode 3, versionName 0.3.
 The certificate is the existing public development identity used by Seifert,
 not a new locally generated key. Future updates must preserve package and
 signer and use a nondecreasing versionCode.

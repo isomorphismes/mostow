@@ -37,6 +37,27 @@ static int acceptance(const char *directory)
     if(!capture(&scene,directory,"strings-klein"))return 0;
     mostow_scene_control(&scene,15,0);
     if(!capture(&scene,directory,"strings-poincare"))return 0;
+    mostow_scene_init(&scene);scene.encounter=2;scene.paused=1;
+    if(!capture(&scene,directory,"m004-regular"))return 0;
+    unsigned char *free_pixels=malloc(576u*1152u*4u),*locked_pixels=malloc(576u*1152u*4u);
+    if(!free_pixels||!locked_pixels){free(free_pixels);free(locked_pixels);return 0;}
+    mostow_m004_edge_only_shapes(scene.rigidity.trial);
+    if(!capture(&scene,directory,"m004-edge-only")){free(free_pixels);free(locked_pixels);return 0;}
+    glReadPixels(0,0,576,1152,GL_RGBA,GL_UNSIGNED_BYTE,free_pixels);
+    mostow_scene_control(&scene,15,0);
+    if(!capture(&scene,directory,"m004-complete-kept")){free(free_pixels);free(locked_pixels);return 0;}
+    glReadPixels(0,0,576,1152,GL_RGBA,GL_UNSIGNED_BYTE,locked_pixels);
+    /* Compare the geometric region, excluding the top numeric HUD. */
+    if(!memcmp(free_pixels+576u*420u*4u,locked_pixels+576u*420u*4u,576u*430u*4u)){
+        fprintf(stderr,"FAIL M004_CONSTRAINT_VISIBLE\n");free(free_pixels);free(locked_pixels);return 0;}
+    char m004_record[1024];snprintf(m004_record,sizeof(m004_record),"%s/m004-complete-kept.scene",directory);
+    MostowScene m004_restored;
+    if(!mostow_scene_read(&m004_restored,m004_record)||!mostow_renderer_scene(&m004_restored,NULL)){
+        free(free_pixels);free(locked_pixels);return 0;}
+    glReadPixels(0,0,576,1152,GL_RGBA,GL_UNSIGNED_BYTE,free_pixels);
+    if(memcmp(free_pixels,locked_pixels,576u*1152u*4u)){
+        fprintf(stderr,"FAIL M004_EXACT_REOPEN\n");free(free_pixels);free(locked_pixels);return 0;}
+    free(free_pixels);free(locked_pixels);
     /* Recording replays the same application-owned control operations as touch. */
     mostow_scene_init(&scene);scene.paused=1;scene.anchor=(MostowAnchor){100,{0.2,0.3,0.5}};
     for(unsigned frame=0;frame<72;++frame){
@@ -78,7 +99,11 @@ int main(int argc,char **argv)
     if(argc>4)view.pitch=(float)strtod(argv[4],NULL);
     if(!mostow_renderer_start(width,height)){fprintf(stderr,"START_FAILED\n");return 1;}
     if(suite)return acceptance(argv[2])?0:1;
-    if(!mostow_renderer_draw(&view,seconds,0,1,1)){fprintf(stderr,"DRAW_FAILED\n");return 1;}
+    if(argc>2&&!strcmp(argv[2],"--m004")){
+        MostowScene scene;mostow_scene_init(&scene);scene.encounter=2;scene.camera=view;
+        mostow_m004_edge_only_shapes(scene.rigidity.trial);
+        if(!mostow_renderer_scene(&scene,NULL))return 1;
+    }else if(!mostow_renderer_draw(&view,seconds,0,1,1)){fprintf(stderr,"DRAW_FAILED\n");return 1;}
     unsigned char *pixels=malloc((size_t)width*height*4);
     if(!pixels)return 2;
     glReadPixels(0,0,width,height,GL_RGBA,GL_UNSIGNED_BYTE,pixels);
