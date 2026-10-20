@@ -42,7 +42,7 @@ typedef struct {
 MostowM004Triangulation mostow_m004_triangulation(void);
 MostowM004Topology mostow_m004_check_topology(const MostowM004Triangulation *triangulation);
 MostowTetrahedronVolume mostow_ideal_tetrahedron_volume(MostowIdealShape shape);
-/* Real-linear shear, then optionally (2w+1)/(w+1), on the Riemann sphere.
+/* Real-linear shear, then optionally (w-0.4)/(0.4w+1), on the Riemann sphere.
  * |shear|<1 preserves orientation; shear=0 is conformal. The cross-ratio is
  * independently recomputed from homogeneous transformed boundary points. */
 int mostow_tetrahedron_boundary_example(MostowIdealShape shape,double shear,int mobius,

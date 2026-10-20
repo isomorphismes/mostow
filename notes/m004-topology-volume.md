@@ -152,7 +152,11 @@ grid is not its proof.
 Homogeneous complex coordinates keep infinity explicit. The helper maps
 the four normalized vertices by the real-linear map
 w ↦ (1+k)Re(w) + i(1−k)Im(w), |k|<1, followed optionally by the genuine
-Möbius map w ↦ (2w+1)/(w+1). It recomputes the ordered cross-ratio from
+Möbius map w ↦ (w−0.4)/(0.4w+1). Its complex matrix satisfies M* M = 1.16 I,
+so it induces a sphere rotation. In real sphere coordinates this is
+x′ = (21x+20z)/29, y′ = y, z′ = (−20x+21z)/29. An independent orthogonal
+matrix witness checks the actual output vertices against these identities.
+The helper recomputes the ordered cross-ratio from
 complex 2 by 2 determinants and maps those same transformed points onto
 the boundary sphere. The renderer therefore receives actual transformed
 vertices and a separately recomputed shape.
@@ -163,6 +167,13 @@ shape to Re(z) + i(1−k)Im(z)/(1+k), an explicit nonconformal boundary
 example. No claim is made that this new tetrahedron supplies a complete
 deformed figure-eight manifold. The existing cusp constraints decide that
 separate question.
+
+The first nontrivial Möbius example used (2w+1)/(w+1). Real GLES review
+found that its sphere compression placed the regular tetrahedron almost
+edge-on at the default camera. The rotation above preserves spherical
+separations and fixes that readability issue while retaining a genuine
+Möbius transformation. This is visual feedback about the displayed
+comparison, not evidence against cross-ratio invariance.
 
 The unchanged witness rejects six deliberately altered implementations:
 missing reciprocal-face check, nonprimitive peripheral basis accepted,

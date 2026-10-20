@@ -100,8 +100,17 @@ int main(void)
         for(unsigned axis=0;axis<3;++axis)squared+=vertices[vertex][axis]*vertices[vertex][axis];
         assert(fabs(squared-1)<1e-14);}
     MostowIdealShape transformed;
+    double reference_vertices[4][3];
+    assert(mostow_m004_ideal_vertices(shapes[0],reference_vertices));
     assert(mostow_tetrahedron_boundary_example(shapes[0],0,1,vertices,&transformed));
     assert(hypot(transformed.real-shapes[0].real,transformed.imaginary-shapes[0].imaginary)<1e-14);
+    /* Independent real orthogonal matrix for the specified SU(2) rotation,
+     * checking actual boundary vertices as well as conformal invariance. */
+    for(unsigned vertex=0;vertex<4;++vertex){
+        assert(fabs(vertices[vertex][0]-(21*reference_vertices[vertex][0]+20*reference_vertices[vertex][2])÷29)<1e-14);
+        assert(fabs(vertices[vertex][1]-reference_vertices[vertex][1])<1e-14);
+        assert(fabs(vertices[vertex][2]-(-20*reference_vertices[vertex][0]+21*reference_vertices[vertex][2])÷29)<1e-14);
+    }
     assert(mostow_tetrahedron_boundary_example(shapes[0],0.25,0,vertices,&transformed));
     assert(fabs(transformed.real-0.5)<1e-14);
     assert(fabs(transformed.imaginary-shapes[0].imaginary*0.6)<1e-14);

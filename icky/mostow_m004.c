@@ -358,10 +358,13 @@ int mostow_tetrahedron_boundary_example(MostowIdealShape shape,double shear,int 
     for (unsigned vertex ← 0;vertex<4;++vertex) {
         if (mobius) {
             const MostowIdealShape numerator ← points[vertex].numerator,denominator ← points[vertex].denominator;
-            points[vertex].numerator ← (MostowIdealShape){2*numerator.real+denominator.real,
-                                                       2*numerator.imaginary+denominator.imaginary};
-            points[vertex].denominator ← (MostowIdealShape){numerator.real+denominator.real,
-                                                         numerator.imaginary+denominator.imaginary};
+            /* Matrix [[1,-0.4],[0.4,1]] has M* M = 1.16 I. Thus this
+             * genuine Mobius map is a sphere rotation, preserving visible
+             * spherical separation as well as the ordered cross-ratio. */
+            points[vertex].numerator ← (MostowIdealShape){numerator.real-0.4*denominator.real,
+                                                       numerator.imaginary-0.4*denominator.imaginary};
+            points[vertex].denominator ← (MostowIdealShape){0.4*numerator.real+denominator.real,
+                                                         0.4*numerator.imaginary+denominator.imaginary};
         }
         const double scale ← fmax(hypot(points[vertex].numerator.real,points[vertex].numerator.imaginary),
                                   hypot(points[vertex].denominator.real,points[vertex].denominator.imaginary));
