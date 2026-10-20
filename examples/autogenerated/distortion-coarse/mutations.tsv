@@ -1,0 +1,7 @@
+name	literal_source	replacement	expected_witness
+erase_anisotropy	result.dilatation ← dilatation;	result.dilatation ← 1;	diagonal stretch dilatation
+erase_target_metric	status ← metric_frame(target_metric,&target);	status ← metric_frame(((void)target_metric,source_metric),&target);	off-diagonal metric basis identity
+erase_orientation	result.orientation ← determinant>0 ? 1 : -1;	result.orientation ← 1;	reflection signed area and anticonformality
+erase_differential_in_image	const MostowTangentPoint image ← {fma(measured.xx,source.x,measured.xy*source.y),	const MostowTangentPoint image ← {source.x,	general metric sample image and shear x-coordinate
+floor_instead_of_nearest	const double nearest ← lower+(real-lower>0.5 ? 1 : 0);	const double nearest ← lower;	three-quarter witness outside B
+too_small_density	return (MostowCoarseConstants){1,0,0.5};	return (MostowCoarseConstants){1,0,0.49};	half-integer sharp bound
