@@ -1,0 +1,46 @@
+#!/usr/bin/env grease
+# ROOT; execute through the qualified Grease/ICK host route. Host GLES only.
+var root = $(git -C "$[ARGV[0]]" rev-parse --show-toplevel)
+var compiler = ENV.MOSTOW_HOST_COMPILER
+var gl = ENV.MOSTOW_GL_ROOT
+var revision = $(git -C "$root" rev-parse HEAD)
+var output = "$root/build/host/frontend-mutants"
+test -x "$compiler"
+test -f "$gl/include/EGL/egl.h"
+test -f "$gl/include/KHR/khrplatform.h"
+mkdir -p "$output"
+setglobal ENV.EGL_PLATFORM = 'surfaceless'
+setglobal ENV.LIBGL_ALWAYS_SOFTWARE = '1'
+setglobal ENV.LD_LIBRARY_PATH = "$gl/lib/x86_64-linux-gnu"
+# Freeze only the mathematical drawing input. The actual HUD still changes,
+# so a text-only screenshot comparison cannot incorrectly accept these cases.
+for mutant in ([
+    ['quotient', r's|else if(s->encounter==3)draw_octagon(s);|else if(s->encounter==3){MostowScene frozen;mostow_scene_init(\&frozen);draw_octagon(\&frozen);}|', 'quotient-crossed'],
+    ['pants', r's|else if(s->encounter==4)draw_pants(s);|else if(s->encounter==4){MostowScene frozen;mostow_scene_init(\&frozen);draw_pants(\&frozen);}|', 'pants-twisted'],
+    ['distortion', r's|else if(s->encounter==5)draw_distortion(s);|else if(s->encounter==5){MostowScene frozen;mostow_scene_init(\&frozen);draw_distortion(\&frozen);}|', 'distortion-shear'],
+    ['coarse', r's|else if(s->encounter==6)draw_coarse(s);|else if(s->encounter==6){MostowScene frozen;mostow_scene_init(\&frozen);draw_coarse(\&frozen);}|', 'coarse-half'],
+    ['boundary', r's|else if(s->encounter==7)draw_rigidity_account(s,matrix);|else if(s->encounter==7){MostowScene frozen;mostow_scene_init(\&frozen);draw_rigidity_account(\&frozen,matrix);}|', 'rigidity-boundary-changed']
+]) {
+    var name = mutant[0]
+    mkdir -p "$output/$name"
+    sed "$[mutant[1]]" "$root/android/mostow_renderer.c" > "$output/$name.c"
+    if cmp -s "$root/android/mostow_renderer.c" "$output/$name.c" {
+        printf '\033[31mFAIL\033[0m renderer mutation did not change source: %s\n' "$name"
+        exit 1
+    }
+    "$compiler" -fno-link-libatomic -std=c11 -O2 -Wall -Wextra -Werror -Wpedantic \
+        -I "$root/native" -I "$root/fixtures" -I "$root/android" -isystem "$gl/include" \
+        "-DMOSTOW_SOURCE_REVISION=\"$revision\"" \
+        "$root/icky/mostow_sheet.c" "$root/icky/mostow_scene.c" "$root/icky/mostow_m004.c" \
+        "$root/icky/mostow_octagon.c" "$root/icky/mostow_pants.c" "$root/icky/mostow_distortion.c" \
+        "$root/native/mostow_view.c" "$output/$name.c" "$root/native/render_host.c" \
+        -L "$gl/lib/x86_64-linux-gnu" -l:libEGL.so.1 -l:libGLESv2.so.2 -lm -o "$output/$name-render"
+    if "$output/$name-render" --acceptance "$output/$name" > "$output/$name.log" 2>&1 {
+        printf '\033[31mFAIL\033[0m constant geometry renderer passed: %s\n' "$name"
+        exit 1
+    }
+    rg -F "FAIL MECHANICAL_GEOMETRY_VISIBLE $[mutant[2]]" "$output/$name.log"
+    sha256sum "$output/$name.c" "$output/$name-render"
+    printf '\033[32mPASS\033[0m rejected constant %s geometry with live numeric HUD\n' "$name"
+}
+printf '\033[32mPASS\033[0m five renderer-state mutations rejected by unchanged cropped geometry witnesses\n'

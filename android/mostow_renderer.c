@@ -260,14 +260,280 @@ static void draw_m004(const MostowScene *scene,const float matrix[16])
     ui_count=0;
     text(width*0.1f,height*0.30f,width÷300.0f,scene->rigidity.enforce_completeness?"COMPLETE KEPT":"FREE SHAPES");
     text(width*0.63f,height*0.30f,width÷300.0f,"REFERENCE");
+    if(scene->information){const MostowM004Triangulation triangulation←mostow_m004_triangulation();
+        const MostowM004Topology topology←mostow_m004_check_topology(&triangulation);
+        text(14,height*0.62f,width÷350.0f,topology.manifold_verified?
+            "INTEGER TOPOLOGY: 2 EDGE CLASSES / TORUS CUSP":"COMBINATORIAL TOPOLOGY CHECK FAILED");}
     ui_flush(scene->illustrated?0.12f:0.85f,scene->illustrated?0.18f:0.9f,scene->illustrated?0.2f:0.95f);
+}
+static void comparison_circle(float center_x,float center_y,float radius)
+{
+    float points[(MOSTOW_STRING_STEPS+1)*3];
+    for(unsigned index←0;index<=MOSTOW_STRING_STEPS;++index){
+        const double angle←6.283185307179586*(double)index÷MOSTOW_STRING_STEPS;
+        points[3*index]←center_x+radius*(float)cos(angle);
+        points[3*index+1]←center_y-radius*(float)sin(angle);points[3*index+2]←0;
+    }
+    stroke(points,MOSTOW_STRING_STEPS+1,1,0,0.4f,0.48f,0.48f);
+}
+static void draw_octagon(const MostowScene *scene)
+{
+    MostowOctagon octagon;mostow_octagon_init(&octagon);
+    const float center_y←height*0.44f,radius←width*0.215f;
+    const float colors[4][3]←{{0.95f,0.4f,0.18f},{0.2f,0.75f,0.8f},{0.7f,0.45f,0.85f},{0.7f,0.8f,0.22f}};
+    const unsigned color_class[8]←{0,1,0,1,2,3,2,3};
+    for(unsigned panel←0;panel<2;++panel){
+        const float center_x←width*(panel?0.75f:0.25f);
+        comparison_circle(center_x,center_y,radius);
+        for(unsigned tile←0;tile<(panel&&!scene->model?MOSTOW_OCTAGON_NEIGHBORS:1u);++tile){
+            MostowOctagonIsometry isometry;
+            if(!mostow_octagon_neighbor(&octagon,tile,&isometry))continue;
+            for(unsigned side←0;side<8;++side){
+                float points[(MOSTOW_STRING_STEPS+1)*3];int available←1;
+                for(unsigned index←0;index<=MOSTOW_STRING_STEPS;++index){
+                    MostowOctagonPoint point,image;
+                    if(!mostow_octagon_side_point(&octagon,side,(double)index÷MOSTOW_STRING_STEPS,&point)||
+                       !mostow_octagon_apply(isometry,point,&image)){available←0;break;}
+                    points[3*index]←center_x+radius*(float)image.x;
+                    points[3*index+1]←center_y-radius*(float)image.y;points[3*index+2]←0;
+                }
+                const float *color←colors[color_class[side]];
+                if(available)stroke(points,MOSTOW_STRING_STEPS+1,tile?0.7f:2.2f,0,color[0],color[1],color[2]);
+            }
+        }
+        MostowOctagonPoint marker←scene->quotient.position;
+        if(panel&&!mostow_octagon_apply(scene->quotient.lift,marker,&marker))continue;
+        ui_count←0;rectangle(center_x+radius*(float)marker.x-4,center_y-radius*(float)marker.y-4,8,8);
+        ui_flush(0.98f,0.35f,0.12f);
+        if(!panel){
+            static const char *side_names[8]←{"A+","B+","A-","B-","C+","D+","C-","D-"};
+            ui_count←0;
+            for(unsigned side←0;side<8;++side){MostowOctagonPoint midpoint;
+                if(mostow_octagon_side_point(&octagon,side,0.5,&midpoint))
+                    text(center_x+radius*1.12f*(float)midpoint.x-6,
+                         center_y-radius*1.12f*(float)midpoint.y-4,width÷480.0f,side_names[side]);
+            }
+            ui_flush(scene->illustrated?0.12f:0.85f,scene->illustrated?0.18f:0.9f,scene->illustrated?0.2f:0.92f);
+        }
+    }
+    ui_count←0;text(width*0.11f,height*0.29f,width÷310.0f,"QUOTIENT CUT");
+    text(width*0.62f,height*0.29f,width÷310.0f,scene->model?"COVER: 1 TILE":"COVER: 9 TILES");
+    char word[100]←"WORD";size_t used←4;
+    for(unsigned index←0;index<scene->quotient.word_length&&index<14;++index){
+        const int letter←scene->quotient.word[index];
+        int written←snprintf(word+used,sizeof(word)-used," %c%s",'A'+abs(letter)-1,letter<0?"-":"+");
+        if(written<0||(size_t)written>=sizeof(word)-used)break;
+        used+=(size_t)written;
+    }
+    text(14,height*0.59f,width÷310.0f,word);
+    text(14,height*0.62f,width÷340.0f,"PAIRED SIDES REVERSE - OVERLAP IS NOT GLUING");
+    ui_flush(scene->illustrated?0.12f:0.82f,scene->illustrated?0.18f:0.88f,scene->illustrated?0.2f:0.9f);
+}
+static void draw_pants(const MostowScene *scene)
+{
+    const MostowPantsDiagnostics pants←mostow_pants_evaluate(&scene->pants);
+    if(!pants.available)return;
+    const float radius←width*0.175f;
+    for(unsigned pant←0;pant<2;++pant)for(unsigned half←0;half<2;++half){
+        const float center_x←width*(pant?0.74f:0.26f),center_y←height*(half?0.49f:0.36f);
+        for(unsigned side←0;side<6;++side){
+            float points[(MOSTOW_STRING_STEPS+1)*3];int available←1;
+            for(unsigned index←0;index<=MOSTOW_STRING_STEPS;++index){MostowPantsPoint point;
+                if(!mostow_pants_hexagon_point(&pants,side,(double)index÷MOSTOW_STRING_STEPS,&point)){available←0;break;}
+                points[3*index]←center_x+radius*(float)point.x;
+                points[3*index+1]←center_y+(half?1:-1)*radius*(float)point.y;points[3*index+2]←0;
+            }
+            if(available)stroke(points,MOSTOW_STRING_STEPS+1,side%2?2.5f:1.2f,0,
+                side%2?0.95f:0.3f,side%2?0.48f:0.76f,side%2?0.22f:0.82f);
+        }
+    }
+    /* The bars encode actual transverse geodesic lengths from holonomy.
+     * A fixed panel layout is not an isometric embedding of the surface. */
+    ui_count←0;
+    for(unsigned loop←0;loop<3;++loop){
+        const double length←pants.transverse_lengths[loop];
+        if(isfinite(length)&&length>=0)rectangle(width*0.12f,height*(0.57f+0.018f*loop),
+            width*0.76f*(float)(length÷(length+8)),4);
+    }
+    ui_flush(0.3f,0.76f,0.82f);
+    ui_count←0;text(width*0.09f,height*0.27f,width÷320.0f,"PANT 1");
+    text(width*0.64f,height*0.27f,width÷320.0f,"PANT 2");
+    text(14,height*0.635f,width÷360.0f,"FOUR RIGHT HEXAGONS - CUT DRAWING");
+    ui_flush(scene->illustrated?0.12f:0.82f,scene->illustrated?0.18f:0.88f,scene->illustrated?0.2f:0.9f);
+}
+static void draw_distortion(const MostowScene *scene)
+{
+    MostowTangentMetric source,target;mostow_scene_tangent_metrics(scene,&source,&target);
+    const MostowDifferential2 differential←mostow_scene_differential(scene);
+    const MostowDistortionDiagnostics measured←mostow_scene_distortion(scene);
+    const double largest←measured.status==MOSTOW_DISTORTION_OK?fmax(1,measured.sigma_major):3;
+    const float radius←width*0.205f÷(float)largest,center_y←height*0.44f;
+    float circle[(MOSTOW_STRING_STEPS+1)*3],ellipse[(MOSTOW_STRING_STEPS+1)*3];
+    int available←1;
+    for(unsigned index←0;index<=MOSTOW_STRING_STEPS;++index){
+        MostowTangentPoint before,after;
+        if(mostow_distortion_sample(differential,source,target,6.283185307179586*index÷MOSTOW_STRING_STEPS,
+                                   &before,&after)!=MOSTOW_DISTORTION_OK){available←0;break;}
+        circle[3*index]←width*0.25f+radius*(float)before.x;
+        circle[3*index+1]←center_y-radius*(float)before.y;circle[3*index+2]←0;
+        ellipse[3*index]←width*0.75f+radius*(float)after.x;
+        ellipse[3*index+1]←center_y-radius*(float)after.y;ellipse[3*index+2]←0;
+    }
+    if(available){stroke(circle,MOSTOW_STRING_STEPS+1,2.2f,0,0.3f,0.8f,0.85f);
+        stroke(ellipse,MOSTOW_STRING_STEPS+1,2.6f,0,0.98f,0.45f,0.2f);
+        /* Two labelled-by-color radii make rotations and orientation reversal
+         * visible even when the boundary curve remains a circle. */
+        for(unsigned axis←0;axis<2;++axis){const unsigned point←axis*(MOSTOW_STRING_STEPS÷4);
+            const float source_radius[6]←{width*0.25f,center_y,0,circle[3*point],circle[3*point+1],0};
+            const float target_radius[6]←{width*0.75f,center_y,0,ellipse[3*point],ellipse[3*point+1],0};
+            stroke(source_radius,2,1.6f,0,axis?0.95f:0.4f,axis?0.8f:0.75f,axis?0.25f:0.9f);
+            stroke(target_radius,2,1.6f,0,axis?0.95f:0.4f,axis?0.8f:0.75f,axis?0.25f:0.9f);
+        }
+    }
+    else comparison_circle(width*0.25f,center_y,width*0.14f);
+    ui_count←0;text(width*0.09f,height*0.29f,width÷320.0f,"SOURCE CIRCLE");
+    text(width*0.60f,height*0.29f,width÷320.0f,"TARGET IMAGE");
+    text(14,height*0.61f,width÷340.0f,"ORTHONORMAL FRAMES FOR SPECIFIED METRICS");
+    ui_flush(scene->illustrated?0.12f:0.82f,scene->illustrated?0.18f:0.88f,scene->illustrated?0.2f:0.9f);
+}
+static void draw_coarse(const MostowScene *scene)
+{
+    const MostowIntegerWitness witness←mostow_integer_inclusion_witness(scene->coarse_position);
+    const float left←width*0.12f,right←width*0.88f,center_y←height*0.44f;
+    const float line[6]←{left,center_y,0,right,center_y,0};stroke(line,2,2,0,0.4f,0.6f,0.7f);
+    ui_count←0;
+    for(int integer←-4;integer<=4;++integer){
+        const float x←left+(right-left)*(float)(integer+4)÷8;
+        rectangle(x-2,center_y-9,4,18);char label[16];snprintf(label,sizeof(label),"%d",integer);
+        text(x-4,center_y+20,width÷350.0f,label);
+    }
+    ui_flush(0.3f,0.8f,0.85f);
+    const float point_x←left+(right-left)*(float)(scene->coarse_position+4)÷8;
+    ui_count←0;rectangle(point_x-4,center_y-35,8,14);ui_flush(0.98f,0.4f,0.16f);
+    if(witness.available){
+        const float nearest_x←left+(right-left)*(float)(witness.integer+4)÷8;
+        const float segment[6]←{point_x,center_y-25,0,nearest_x,center_y,0};
+        stroke(segment,2,2,0,0.98f,0.4f,0.16f);
+    }
+    ui_count←0;text(14,height*0.56f,width÷320.0f,"FINITE WINDOW OF INFINITE SPACES");
+    text(14,height*0.595f,width÷320.0f,"EVERY REAL HAS A NEAREST INTEGER");
+    text(14,height*0.63f,width÷320.0f,"DISTANCE AT MOST ONE HALF - GLOBAL PROOF");
+    ui_flush(scene->illustrated?0.12f:0.82f,scene->illustrated?0.18f:0.88f,scene->illustrated?0.2f:0.9f);
+}
+static void draw_boundary_comparison(const MostowScene *scene,const float matrix[16])
+{
+    MostowIdealShape complete[2];mostow_m004_complete_shapes(complete);
+    const unsigned edges[6][2]←{{0,1},{0,2},{0,3},{1,2},{1,3},{2,3}};
+    for(unsigned example←0;example<2;++example){double vertices_on_sphere[4][3];MostowIdealShape cross_ratio;
+        const double shear←example?0.25+0.15*scene->distortion_amount:0;
+        if(!mostow_tetrahedron_boundary_example(complete[0],shear,1,vertices_on_sphere,&cross_ratio))continue;
+        float projected[4][3];int visible←1;
+        for(unsigned vertex←0;vertex<4;++vertex){
+            const float position[3]←{0.9f*(float)vertices_on_sphere[vertex][0]+(example?1.2f:-1.2f),
+                0.9f*(float)vertices_on_sphere[vertex][1],0.9f*(float)vertices_on_sphere[vertex][2]};
+            if(!mostow_project(matrix,position,width,height,projected[vertex]))visible←0;
+        }
+        if(visible)for(unsigned edge←0;edge<6;++edge){float points[6];
+            memcpy(points,projected[edges[edge][0]],3*sizeof(float));
+            memcpy(points+3,projected[edges[edge][1]],3*sizeof(float));
+            stroke(points,2,2.7f,0,example?0.98f:0.3f,example?0.45f:0.8f,example?0.2f:0.85f);
+        }
+    }
+}
+static void draw_rigidity_account(const MostowScene *scene,const float matrix[16])
+{
+    static const char *pages[6][8]←{
+        {"CITED: MOSTOW-PRASAD RIGIDITY","COMPLETE CONNECTED HYPERBOLIC MANIFOLDS",
+         "FINITE VOLUME - DIMENSION AT LEAST 3","ISOMORPHIC FUNDAMENTAL GROUPS",
+         "GROUP ISOMORPHISM COMES FROM ISOMETRY","COMPLETENESS AND FINITE VOLUME MATTER",
+         "SURFACES IN DIMENSION 2 ARE DIFFERENT","NEXT: HOW THE GLOBAL ARGUMENT WORKS"},
+        {"PROOF ROUTE: GROUP TO BOUNDARY","A GROUP ISOMORPHISM FIXES EQUIVARIANCE",
+         "CITED LEMMA: AN APPROPRIATE LIFT","EXTENDS TO AN EQUIVARIANT BOUNDARY MAP",
+         "CUSPS REQUIRE THE FINITE-VOLUME ARGUMENT","AN ARBITRARY BOUNDARY MAP NEED NOT BE RIGID",
+         "THE VOLUME STEP SUPPLIES THE CONSTRAINT","CITED LEMMAS - NOT A NUMERICAL PROOF"},
+        {"PROOF ROUTE: GLOBAL VOLUME","STRAIGHTEN CHAINS TO GEODESIC SIMPLICES",
+         "COMPARE THE SHARP SIMPLEX VOLUME BOUND","SMEARING TIES THAT BOUND TO TOTAL VOLUME",
+         "EQUALITY FORCES REGULAR IDEAL SIMPLICES","BOUNDARY CONFIGURATIONS BECOME RIGID",
+         "COMPLETE ARGUMENT IS A CITED THEOREM","FINITE TETRAHEDRA DO NOT PROVE THIS"},
+        {"IDEAL TETRAHEDRA: DIMENSION 3","A COMPLEX CROSS-RATIO SPECIFIES SHAPE",
+         "THREE POSITIVE ANGLES ADD TO PI","REGULAR: EACH DIHEDRAL ANGLE IS PI/3",
+         "CITED: REGULAR IDEAL VOLUME IS MAXIMAL","M004 JOINS TWO REGULAR TETRAHEDRA",
+         "EDGE EQUATIONS ALONE DO NOT CLOSE A CUSP","M004 BUTTON OPENS THE EXECUTABLE TEST"},
+        {"SURFACE FLEXIBILITY: DIMENSION 2","TWO PANTS JOIN TO FORM GENUS 2",
+         "THREE LENGTHS AND THREE TWISTS VARY","CURVATURE STAYS -1 - AREA STAYS 4 PI",
+         "TRANSVERSE GEODESIC LENGTHS CHANGE","THE MARKED HYPERBOLIC STRUCTURE CHANGES",
+         "TOPOLOGY ALONE DOES NOT FIX THIS METRIC","SURFACES BUTTON OPENS THE CONSTRUCTION"},
+        {"KEEP THE EVIDENCE LEVELS DISTINCT","COMBINATORIAL CHECK: FINITE INTEGER DATA",
+         "ALGEBRAIC IDENTITY: STATED ASSUMPTIONS","NUMERICAL TEST: FINITE PRECISION ERRORS",
+         "CITED THEOREM: GLOBAL RIGIDITY RESULT","PICTURE: VIEW OF THE CURRENT MATH STATE",
+         "HOST RENDERING IS NOT PHONE ACCEPTANCE","NO FINITE NUMERICAL TEST PROVES RIGIDITY"}
+    };
+    if(scene->lesson_page==3){
+        draw_boundary_comparison(scene,matrix);
+        ui_count←0;text(14,height*0.26f,width÷360.0f,"MOBIUS: CROSS-RATIO KEPT");
+        text(width*0.53f,height*0.29f,width÷360.0f,"NONCONFORMAL IMAGE");
+        text(14,height*0.59f,width÷360.0f,"SAME INPUT TETRAHEDRON - DIFFERENT MAPS");
+        text(14,height*0.625f,width÷360.0f,"DRAG TO VARY REAL-LINEAR DISTORTION");
+        ui_flush(scene->illustrated?0.12f:0.82f,scene->illustrated?0.18f:0.88f,scene->illustrated?0.2f:0.9f);return;
+    }
+    ui_count←0;
+    for(unsigned row←0;row<8;++row)text(14,height*(0.24f+0.047f*row),width÷360.0f,pages[scene->lesson_page][row]);
+    ui_flush(scene->illustrated?0.12f:0.82f,scene->illustrated?0.18f:0.88f,scene->illustrated?0.2f:0.9f);
 }
 static void draw_ui(const MostowScene *s,const MostowDiagnostics *d,const char *message)
 {
     float scale=width÷220.0f;char buffer[128];ui_count=0;
-    text(14,18,scale,s->encounter==2?"MOSTOW / FIGURE EIGHT":(s->encounter?"MOSTOW / HYPERBOLIC STRINGS":"MOSTOW / LIVING SHEET"));
+    static const char *titles[8]←{"MOSTOW / LIVING SHEET","MOSTOW / HYPERBOLIC STRINGS","MOSTOW / FIGURE EIGHT",
+        "MOSTOW / GENUS 2 QUOTIENT","MOSTOW / FENCHEL-NIELSEN","MOSTOW / LOCAL DISTORTION",
+        "MOSTOW / COARSE GEOMETRY","MOSTOW / RIGIDITY ARGUMENT"};
+    text(14,18,scale,titles[s->encounter]);
     if(s->information){
-        if(s->encounter==2){MostowM004Diagnostics trial=mostow_m004_constraints(s->rigidity.trial);
+        if(s->encounter==3){MostowOctagon octagon;mostow_octagon_init(&octagon);
+            const MostowOctagonDiagnostics topology←mostow_octagon_diagnostics(&octagon);
+            snprintf(buffer,sizeof(buffer),"V %u E %u F %u / CHI %d",topology.vertices,topology.edges,topology.faces,topology.euler_characteristic);
+            text(14,52,scale,buffer);snprintf(buffer,sizeof(buffer),"AREA %.8f / 4 PI",topology.area);text(14,84,scale,buffer);
+            snprintf(buffer,sizeof(buffer),"CROSSED %u / WORD %u",s->quotient.total_crossings,s->quotient.word_length);text(14,116,scale,buffer);
+            snprintf(buffer,sizeof(buffer),"PAIR ERR %.1E CYCLE %.1E",topology.pairing_error,topology.cycle_error);text(14,148,scale*0.8f,buffer);
+            text(14,180,scale*0.8f,s->navigation_error?"MOVE REJECTED - RESET OR STEP BACK":"MORE: WALK THROUGH IDENTIFIED SIDES");
+        }else if(s->encounter==4){const MostowPantsDiagnostics pants←mostow_pants_evaluate(&s->pants);
+            snprintf(buffer,sizeof(buffer),"L %.2f %.2f %.2f",s->pants.lengths[0],s->pants.lengths[1],s->pants.lengths[2]);text(14,52,scale,buffer);
+            snprintf(buffer,sizeof(buffer),"TWIST %.2f %.2f %.2f",s->pants.twists[0],s->pants.twists[1],s->pants.twists[2]);text(14,84,scale,buffer);
+            if(pants.available){snprintf(buffer,sizeof(buffer),"LOOPS %.3f %.3f %.3f",pants.transverse_lengths[0],pants.transverse_lengths[1],pants.transverse_lengths[2]);text(14,116,scale*0.85f,buffer);
+                snprintf(buffer,sizeof(buffer),"AREA %.6f K %.0f GENUS %d",pants.area,pants.curvature,pants.genus);text(14,148,scale*0.85f,buffer);
+                snprintf(buffer,sizeof(buffer),"HOLONOMY ERR %.1E",pants.surface_relation_error);text(14,180,scale*0.85f,buffer);
+                text(14,212,scale*0.75f,pants.numerically_qualified?"NUMERICALLY QUALIFIED - NOT INTERVAL PROOF":"NUMERICAL QUALIFICATION FAILED");
+            }else text(14,116,scale,"NUMERIC RANGE UNAVAILABLE");
+        }else if(s->encounter==5){const MostowDistortionDiagnostics distortion←mostow_scene_distortion(s);
+            static const char *maps[5]←{"ROTATION","UNIFORM SCALE","SHEAR","ORIENTATION REVERSING","DEGENERATE MAP"};
+            text(14,52,scale,maps[s->distortion_preset]);
+            if(distortion.status==MOSTOW_DISTORTION_OK){
+                snprintf(buffer,sizeof(buffer),"SIGMA %.4f %.4f",distortion.sigma_major,distortion.sigma_minor);text(14,84,scale,buffer);
+                snprintf(buffer,sizeof(buffer),"K %.4f AREA %+.4f",distortion.dilatation,distortion.signed_area_scale);text(14,116,scale,buffer);
+                text(14,148,scale*0.85f,distortion.conformal_to_tolerance?"CONFORMAL TO NUMERICAL TOLERANCE":
+                    (distortion.anticonformal_to_tolerance?"ANTICONFORMAL - ORIENTATION REVERSES":"ANISOTROPIC DIFFERENTIAL"));
+                snprintf(buffer,sizeof(buffer),"ROUNDING EST %.1E",distortion.relative_roundoff_estimate);text(14,212,scale*0.75f,buffer);
+            }else text(14,84,scale,mostow_distortion_status_name(distortion.status));
+            text(14,180,scale*0.85f,s->distortion_metric?"METRICS: SOURCE DIAG 4 1 / TARGET I":"METRICS: SOURCE I / TARGET I");
+        }else if(s->encounter==6){const MostowCoarseConstants constants←mostow_integer_inclusion_constants();
+            const MostowIntegerWitness witness←mostow_integer_inclusion_witness(s->coarse_position);
+            snprintf(buffer,sizeof(buffer),"GLOBAL L %.0f A %.0f B %.1f",constants.multiplicative,constants.additive,constants.coarse_surjectivity);text(14,52,scale,buffer);
+            snprintf(buffer,sizeof(buffer),"REAL %.3f NEAREST %lld",s->coarse_position,(long long)witness.integer);text(14,84,scale,buffer);
+            snprintf(buffer,sizeof(buffer),"DISTANCE %.4f <= ONE HALF",witness.distance);text(14,116,scale*0.85f,buffer);
+            text(14,148,scale*0.8f,"INTEGER DISTANCES ARE PRESERVED EXACTLY");
+            text(14,180,scale*0.8f,"[N-1/2,N+1/2] COVERS THE REAL LINE");
+        }else if(s->encounter==7){
+            snprintf(buffer,sizeof(buffer),"ARGUMENT PAGE %d / 6",s->lesson_page+1);text(14,52,scale,buffer);
+            text(14,84,scale*0.8f,"CITED GLOBAL THEOREM - NOT A FINITE TEST");
+            if(s->lesson_page==3){MostowIdealShape complete[2],image;double sphere[4][3];mostow_m004_complete_shapes(complete);
+                if(mostow_tetrahedron_boundary_example(complete[0],0.25+0.15*s->distortion_amount,1,sphere,&image)){
+                    const MostowTetrahedronVolume regular←mostow_ideal_tetrahedron_volume(complete[0]);
+                    const MostowTetrahedronVolume changed←mostow_ideal_tetrahedron_volume(image);
+                    snprintf(buffer,sizeof(buffer),"CROSS RATIO %.3f + %.3f I",image.real,image.imaginary);text(14,116,scale*0.85f,buffer);
+                    snprintf(buffer,sizeof(buffer),"V REG %.5f / IMAGE %.5f",regular.volume,changed.volume);text(14,148,scale*0.85f,buffer);
+                    text(14,180,scale*0.75f,"REGULAR IDEAL TETRAHEDRON MAXIMIZES VOLUME");
+                }
+            }
+        }else if(s->encounter==2){MostowM004Diagnostics trial=mostow_m004_constraints(s->rigidity.trial);
             text(14,52,scale,!trial.available?"INVALID IDEAL SHAPES":(trial.complete_to_tolerance?"COMPLETE TO TOLERANCE":
                 (s->rigidity.enforce_completeness?"TRIAL REJECTED":"INCOMPLETE TRIAL")));
             if(trial.available){
@@ -277,6 +543,9 @@ static void draw_ui(const MostowScene *s,const MostowDiagnostics *d,const char *
             snprintf(buffer,sizeof(buffer),"Z0 %+.3f %+.3f I",s->rigidity.trial[0].real,s->rigidity.trial[0].imaginary);text(14,148,scale,buffer);
             snprintf(buffer,sizeof(buffer),"Z1 %+.3f %+.3f I",s->rigidity.trial[1].real,s->rigidity.trial[1].imaginary);text(14,180,scale,buffer);
             text(14,212,scale*0.75f,"NUMERICAL CHECKS - TOLERANCE 1E-10");
+            const MostowTetrahedronVolume first←mostow_ideal_tetrahedron_volume(s->rigidity.trial[0]);
+            const MostowTetrahedronVolume second←mostow_ideal_tetrahedron_volume(s->rigidity.trial[1]);
+            if(first.available&&second.available){snprintf(buffer,sizeof(buffer),"VOLUME %.10f",first.volume+second.volume);text(14,240,scale*0.8f,buffer);}
         }else if(s->encounter){MostowMapClass c=mostow_map_classify(mostow_boundary_map(s->angle,s->boost,s->shear));
             snprintf(buffer,sizeof(buffer),"%s / %s",s->model?"POINCARE":"KLEIN",mostow_map_class_name(c));text(14,52,scale,buffer);
             snprintf(buffer,sizeof(buffer),"STRING %d / 144",s->selected_string);text(14,84,scale,buffer);
@@ -298,7 +567,21 @@ static void draw_ui(const MostowScene *s,const MostowDiagnostics *d,const char *
         rectangle(r[0],r[1],r[2],2);rectangle(r[0],r[1]+r[3]-2,r[2],2);rectangle(r[0],r[1],2,r[3]);rectangle(r[0]+r[2]-2,r[1],2,r[3]);
         text(r[0]+(r[2]-(float)strlen(label)*6*font)*0.5f,r[1]+r[3]*0.5f-font*3.5f,font,label);}
     const char *map_labels[3]={"DRAG: MAP ANGLE","DRAG: MAP BOOST","DRAG: MAP SHEAR"};
-    if(s->encounter==2&&s->control_page>0){
+    if(s->encounter>=3&&s->control_page>0){
+        const char *label←"BUTTONS WALK THROUGH IDENTIFIED SIDES";double value←0.5;int slider←0;
+        if(s->encounter==4){static const char *parameters[6]←{"DRAG: CUFF LENGTH 1","DRAG: CUFF LENGTH 2","DRAG: CUFF LENGTH 3",
+            "DRAG: SIGNED TWIST 1","DRAG: SIGNED TWIST 2","DRAG: SIGNED TWIST 3"};
+            label←parameters[s->mechanical_parameter];slider←1;
+            value←s->mechanical_parameter<3?(s->pants.lengths[s->mechanical_parameter]-0.75)÷2.25:
+                (s->pants.twists[s->mechanical_parameter-3]+2)÷4;
+        }else if(s->encounter==5){label←"DRAG: DIFFERENTIAL PARAMETER";slider←1;value←(s->distortion_amount+3)÷6;
+        }else if(s->encounter==6){label←"DRAG: REAL POINT";slider←1;value←(s->coarse_position+4)÷8;
+        }else if(s->encounter==7){label←"PREVIOUS / NEXT: PROOF AND EVIDENCE";
+            if(s->lesson_page==3){label←"DRAG: NONCONFORMAL BOUNDARY MAP";slider←1;value←(s->distortion_amount+3)÷6;}}
+        text(14,height*0.66f,scale*0.85f,label);
+        if(slider){rectangle(14,height*0.711f,width-28,2);
+            rectangle(14+(width-28)*(float)fmax(0,fmin(1,value))-4,height*0.7f,8,height*0.027f);}
+    }else if(s->encounter==2&&s->control_page>0){
         const char *shape_labels[4]={"DRAG: Z0 REAL","DRAG: Z0 IMAG","DRAG: Z1 REAL","DRAG: Z1 IMAG"};
         text(14,height*0.66f,scale,shape_labels[s->rigidity.selected_coordinate]);
         rectangle(14,height*0.711f,width-28,2);
@@ -309,7 +592,8 @@ static void draw_ui(const MostowScene *s,const MostowDiagnostics *d,const char *
           (s->encounter?s->view_shift÷4+0.5:(s->light[2]+1)*0.5);
         rectangle(14+(width-28)*(float)fmax(0,fmin(1,value))-4,height*0.7f,8,height*0.027f);}
     if(message&&message[0])text(14,height*0.92f,scale*0.8f,message);
-    else text(14,height*0.92f,scale*0.8f,s->encounter==2?"MORE: SHAPE CONTROLS / DRAG ORBIT":"TAP SELECT / DRAG ORBIT / PINCH");
+    else text(14,height*0.92f,scale*0.8f,s->encounter>=3?"TOP LEFT: NEXT ENCOUNTER / MORE: CONTROLS":
+        (s->encounter==2?"MORE: SHAPE CONTROLS / DRAG ORBIT":"TAP SELECT / DRAG ORBIT / PINCH"));
     if(!s->encounter)text(width*0.78f,height*0.265f,scale*0.55f,"LIGHT");
     ui_flush(s->illustrated?0.17f:0.82f,s->illustrated?0.24f:0.87f,s->illustrated?0.25f:0.88f);
     /* Visible light indicator, direction in the world XY plane. */
@@ -326,6 +610,11 @@ int mostow_renderer_scene(MostowScene *s,const char *message)
     if(s->illustrated)glClearColor(0.94f,0.89f,0.77f,1);else glClearColor(0.035f,0.055f,0.075f,1);
     glDepthMask(GL_TRUE);glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     if(s->encounter==2)draw_m004(s,matrix);
+    else if(s->encounter==3)draw_octagon(s);
+    else if(s->encounter==4)draw_pants(s);
+    else if(s->encounter==5)draw_distortion(s);
+    else if(s->encounter==6)draw_coarse(s);
+    else if(s->encounter==7)draw_rigidity_account(s,matrix);
     else if(s->encounter)draw_strings(s);else draw_sheet(s,matrix,rotation);
     draw_ui(s,&diagnostic,message);
     return glGetError()==GL_NO_ERROR;
@@ -335,7 +624,15 @@ int mostow_renderer_draw(const MostowView *view,double seconds,int paused,int ri
 int mostow_renderer_pick(MostowScene *s,float x,float y)
 {
     if(!sheet)return 0;
-    if(s->encounter==2)return 0;
+    if(s->encounter==3){
+        const float radius←width*0.215f;
+        const MostowOctagonPoint desired←{(x-width*0.25f)÷radius,(height*0.44f-y)÷radius};
+        MostowOctagon octagon;mostow_octagon_init(&octagon);
+        if(hypot(desired.x,desired.y)>=0.99)return 0;
+        s->navigation_error←!mostow_octagon_move(&octagon,&s->quotient,desired);
+        return !s->navigation_error;
+    }
+    if(s->encounter>=2)return 0;
     if(!s->encounter){MostowDiagnostics d;if(mostow_sample(sheet,s->time,vertices,MOSTOW_MAX_VERTICES,&d)!=MOSTOW_OK)return 0;
         return mostow_sheet_pick(sheet,vertices,&s->camera,width,height,x,y,&s->anchor);}
     float cx,cy,radius;disk_layout(s,&cx,&cy,&radius);double best=width*width;int found=-1;

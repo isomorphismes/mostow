@@ -52,8 +52,8 @@ sphere and drawn with straight ideal edges. The view previews ideal shapes;
 the independent semantic verifier checks the pinned face-pairing topology,
 its torus cusp, primitive peripheral curves and all four equation rows.
 It does not represent a deforming complete 3-manifold or prove rigidity from
-pixels. General flexible-surface moduli and a different-geometry control
-remain separate future parts of the broader feature.
+pixels. Flexible-surface moduli and local distortion have separate semantic
+owners; they are not inferred from this three-dimensional shape experiment.
 
 ## Ownership and evidence
 
@@ -63,9 +63,9 @@ preserve the existing owner boundaries. The Idriç attempt is retained with
 its unavailable compiler-runtime boundary; this is not Android Idriç code.
 
 The original scene schema 3 persisted the independent trial pair, selected coordinate and
-complete/free setting, without repurposing string-art parameters. Older
-schemas are rejected explicitly. Existing source/fixture binding, exact
-reopening, style-state independence, and legacy geometry tests remain.
+complete/free setting, without repurposing string-art parameters. Current
+schema/version rules belong to the scene owner. Existing source/fixture
+binding, exact reopening, style-state independence, and legacy geometry tests remain.
 The known-bad consumer that ignores cusp conditions is rejected by the
 unchanged mathematical witness. Real host GLES checks require visible
 geometric changes and exact framebuffer reopening for this encounter.
