@@ -1,0 +1,15 @@
+quantity	value	independent_source
+snappy_version	3.3.2	SnapPy.__version__
+snappy_wheel_sha256	a0e724f8141314c936b1b4162aed029a95de0e46898a659427ae2bb1b68815d0	snappy-3.3.2-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
+triangulation_source_commit	c3da53c2b3105489b4d71531c4f781c92b237753	3-manifolds/SnapPy
+triangulation_source_blob	02207ee5393033bfb85c2fe9063a3b7ad3c1b7dd	src/snappy/tests/files/example_m004.tri
+triangulation_file_sha256	487f7e0557d10897c875c96f084a525c37494b9b1ccd730cc4a668654d1bd9b4	example_m004.tri
+tetrahedron_0_face_permutations	0132,1230,2310,2103	Manifold('m004')._get_tetrahedra_gluing_data()
+tetrahedron_1_face_permutations	0132,3201,3012,2103	Manifold('m004')._get_tetrahedra_gluing_data()
+edge_valences	6,6	Manifold('m004').edge_valences()
+cusps	1 torus	Manifold('m004').cusp_info()
+homology	Z	Manifold('m004').homology()
+decorated_isomorphism_signature	cPcbbbiht_BaCB	Manifold('m004').triangulation_isosig()
+complete_volume	2.029883212819307250042405108549040571883378615060599584034978214	ManifoldHP('m004').volume()
+right_tetrahedron_volume	0.915965594177219015054603514932384110774149374281672134266498119621763	mpmath 1.3.0 Catalan at 70 digits
+shape_0.7_plus_1.2i_volume	0.9702920283885100987369893015452317582902505980948829356602708019619918	mpmath 1.3.0 Im(polylog(2,z))+arg(1-z)*log(abs(z)) at 70 digits

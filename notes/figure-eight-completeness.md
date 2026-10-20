@@ -5,6 +5,9 @@ hyperbolic string art. The object is SnapPy's fixed two-tetrahedron `m004`
 model of the figure-eight complement. The authoritative convention and
 integer matrix come from the
 [official SnapPy gluing-equation documentation](https://snappy.computop.org/manifold.html#snappy.Manifold.gluing_equations_pgl).
+The [topology, peripheral curves, volume and boundary source note](m004-topology-volume.md)
+records the new exact face-pairing checks, independent host oracles and
+explicit numerical limitations.
 
 For each ideal shape z in the upper half-plane, use edge parameters z,
 z′ = 1/(1−z), and z″ = (z−1)/z. The matrix rows, ordered by tetrahedron,
@@ -45,8 +48,9 @@ the complete reference. A failed trial remains visible in the readouts even
 when completeness is required: it is rejected rather than relabelled solved.
 
 The normalized vertices infinity, 0, 1 and z are mapped to the Klein boundary
-sphere and drawn with straight ideal edges. The view is an ideal-shape
-preview; it does not reconstruct or certify the census face-pairing topology.
+sphere and drawn with straight ideal edges. The view previews ideal shapes;
+the independent semantic verifier checks the pinned face-pairing topology,
+its torus cusp, primitive peripheral curves and all four equation rows.
 It does not represent a deforming complete 3-manifold or prove rigidity from
 pixels. General flexible-surface moduli and a different-geometry control
 remain separate future parts of the broader feature.
@@ -58,7 +62,7 @@ that result. Explicit binary64 model arithmetic and binary32 projection
 preserve the existing owner boundaries. The Idriç attempt is retained with
 its unavailable compiler-runtime boundary; this is not Android Idriç code.
 
-Scene schema 3 persists the independent trial pair, selected coordinate and
+The original scene schema 3 persisted the independent trial pair, selected coordinate and
 complete/free setting, without repurposing string-art parameters. Older
 schemas are rejected explicitly. Existing source/fixture binding, exact
 reopening, style-state independence, and legacy geometry tests remain.
