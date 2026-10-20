@@ -1,0 +1,19 @@
+#!/usr/bin/env grease
+# ROOT PIPES KITCHEN IKE_SOURCE INDEPENDENT_ACCEPTANCE
+var root = $(git -C "$[ARGV[0]]" rev-parse --show-toplevel)
+var pipes = ARGV[1]
+var kitchen = ARGV[2]
+var ike = ARGV[3]
+var acceptance = ARGV[4]
+test $(git -C "$pipes" rev-parse HEAD) = 24235bd2c86ff01f121a318c209b479943805a0f
+var grease = ENV.MOSTOW_GREASE
+test -x "$grease"
+setglobal ENV.GREASE_BINARY = grease
+mkdir -p "$root/build/host/fp-runs"
+cp "$root/ci/mechanical-host.pipeline.json" "$pipes/pipelines/mostow-mechanical-host.json"
+# This is FP's existing Python orchestration substrate, not application code.
+python3 "$pipes/scripts/run-pipeline" mostow-mechanical-host \
+  --param "ROOT=$root" --param "EXECUTOR=$root/tools/run-mechanical-host.grease" \
+  --param "ENVELOPE=$root/ci/mechanical-assignment.txt" --param "KITCHEN_ROOT=$kitchen" \
+  --param "IKE_ROOT=$ike" --param "ACCEPTANCE_ROOT=$acceptance" \
+  --runs-root "$root/build/host/fp-runs"

@@ -52,11 +52,42 @@ jobs:
       - uses: isomorphisms/ai-ci/ick-host@4ea071a96239f3a29ca6d98454feb59947d87cfe
         id: ick
       - run: sudo apt-get install -y libegl-dev libgles-dev libgl1-mesa-dri ffmpeg ripgrep
-      - name: Execute the existing geometry and negative cases
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: isomorphisms/flexible-pipes
+          ref: 24235bd2c86ff01f121a318c209b479943805a0f
+          path: .execution-pipes
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: isomorphisms/kitchen
+          ref: 4274385e040eb712086ebd54826c3d41b42a8a6c
+          path: .execution-kitchen
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: dilapidated-shed/ike
+          ref: 93f9eb0aee9094757414df8a7929c89b6a294b0c
+          path: .execution-ike
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: isomorphisms/ai-ci
+          ref: 59f0c46a64d6f2ec829b06ac728769a7c8ede71b
+          path: .independent-mathematics
+          persist-credentials: false
+      - name: Execute mathematics, real GLES and independent acceptance through FP and Kitchen/Ike
         env:
           MOSTOW_HOST_COMPILER: ${{ steps.ick.outputs.compiler }}
           MOSTOW_GREASE: ${{ steps.grease.outputs.executable }}
-        run: '"${{ steps.grease.outputs.executable }}" tools/test-host.grease "$GITHUB_WORKSPACE"'
+          MOSTOW_GL_ROOT: /usr
+          EGL_PLATFORM: surfaceless
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: >-
+          "${{ steps.grease.outputs.executable }}" tools/run-fp-host.grease
+          "$GITHUB_WORKSPACE" "$GITHUB_WORKSPACE/.execution-pipes"
+          "$GITHUB_WORKSPACE/.execution-kitchen" "$GITHUB_WORKSPACE/.execution-ike"
+          "$GITHUB_WORKSPACE/.independent-mathematics"
       - name: Regenerate the fixture with its unchanged acceptance bounds
         env:
           MOSTOW_HOST_COMPILER: ${{ steps.ick.outputs.compiler }}
@@ -95,8 +126,18 @@ jobs:
             build/host/encounters/sheet-*.png
             build/host/encounters/strings-*.png
             build/host/encounters/m004-*.png
+            build/host/encounters/quotient-*.png
+            build/host/encounters/pants-*.png
+            build/host/encounters/distortion-*.png
+            build/host/encounters/coarse-*.png
+            build/host/encounters/rigidity-*.png
             build/host/encounters/*.scene
             build/host/encounters/interaction-host.mp4
+            build/host/fp-runs/
+            build/host/independent/
+            build/host/*-inputs.tsv
+            build/host/*-artifacts.tsv
+            build/host/ike-execution.tsv
           if-no-files-found: error
 
   paired-packages:
