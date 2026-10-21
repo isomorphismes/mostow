@@ -545,7 +545,7 @@ static void draw_ui(const MostowScene *s,const MostowDiagnostics *d,const char *
             text(14,212,scale*0.75f,"NUMERICAL CHECKS - TOLERANCE 1E-10");
             const MostowTetrahedronVolume first←mostow_ideal_tetrahedron_volume(s->rigidity.trial[0]);
             const MostowTetrahedronVolume second←mostow_ideal_tetrahedron_volume(s->rigidity.trial[1]);
-            if(first.available&&second.available){snprintf(buffer,sizeof(buffer),"VOLUME %.10f",first.volume+second.volume);text(14,240,scale*0.8f,buffer);}
+            if(first.available&&second.available){snprintf(buffer,sizeof(buffer),"TRIAL VOLUME %.10f",first.volume+second.volume);text(14,240,scale*0.8f,buffer);}
         }else if(s->encounter){MostowMapClass c=mostow_map_classify(mostow_boundary_map(s->angle,s->boost,s->shear));
             snprintf(buffer,sizeof(buffer),"%s / %s",s->model?"POINCARE":"KLEIN",mostow_map_class_name(c));text(14,52,scale,buffer);
             snprintf(buffer,sizeof(buffer),"STRING %d / 144",s->selected_string);text(14,84,scale,buffer);
