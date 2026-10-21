@@ -502,6 +502,8 @@ static void draw_ui(const MostowScene *s,const MostowDiagnostics *d,const char *
                 snprintf(buffer,sizeof(buffer),"AREA %.6f K %.0f GENUS %d",pants.area,pants.curvature,pants.genus);text(14,148,scale*0.85f,buffer);
                 snprintf(buffer,sizeof(buffer),"HOLONOMY ERR %.1E",pants.surface_relation_error);text(14,180,scale*0.85f,buffer);
                 text(14,212,scale*0.75f,pants.numerically_qualified?"NUMERICALLY QUALIFIED - NOT INTERVAL PROOF":"NUMERICAL QUALIFICATION FAILED");
+                snprintf(buffer,sizeof(buffer),"CUFF TR %.3f %.3f %.3f",pants.cuff_traces[0],pants.cuff_traces[1],pants.cuff_traces[2]);text(14,240,scale*0.7f,buffer);
+                snprintf(buffer,sizeof(buffer),"LOOP TR %.3f %.3f %.3f",pants.transverse_traces[0],pants.transverse_traces[1],pants.transverse_traces[2]);text(14,268,scale*0.7f,buffer);
             }else text(14,116,scale,"NUMERIC RANGE UNAVAILABLE");
         }else if(s->encounter==5){const MostowDistortionDiagnostics distortion←mostow_scene_distortion(s);
             static const char *maps[5]←{"ROTATION","UNIFORM SCALE","SHEAR","ORIENTATION REVERSING","DEGENERATE MAP"};
