@@ -16,6 +16,7 @@ setglobal ENV.LD_LIBRARY_PATH = "$gl/lib/x86_64-linux-gnu"
 # so a text-only screenshot comparison cannot incorrectly accept these cases.
 for mutant in ([
     ['quotient', r's|else if(s->encounter==3)draw_octagon(s);|else if(s->encounter==3){MostowScene frozen;mostow_scene_init(\&frozen);draw_octagon(\&frozen);}|', 'quotient-crossed'],
+    ['quotient-markers', r's|MostowOctagonPoint marker←scene->quotient.position;|MostowOctagonPoint marker←{0,0};|; s|if(panel\&\&!mostow_octagon_apply(scene->quotient.lift,marker,\&marker))continue;|/* markers frozen, crossing word remains live */|', 'quotient-crossed'],
     ['pants', r's|else if(s->encounter==4)draw_pants(s);|else if(s->encounter==4){MostowScene frozen;mostow_scene_init(\&frozen);draw_pants(\&frozen);}|', 'pants-twisted'],
     ['distortion', r's|else if(s->encounter==5)draw_distortion(s);|else if(s->encounter==5){MostowScene frozen;mostow_scene_init(\&frozen);draw_distortion(\&frozen);}|', 'distortion-shear'],
     ['coarse', r's|else if(s->encounter==6)draw_coarse(s);|else if(s->encounter==6){MostowScene frozen;mostow_scene_init(\&frozen);draw_coarse(\&frozen);}|', 'coarse-half'],
@@ -43,4 +44,4 @@ for mutant in ([
     sha256sum "$output/$name.c" "$output/$name-render"
     printf '\033[32mPASS\033[0m rejected constant %s geometry with live numeric HUD\n' "$name"
 }
-printf '\033[32mPASS\033[0m five renderer-state mutations rejected by unchanged cropped geometry witnesses\n'
+printf '\033[32mPASS\033[0m six renderer-state mutations rejected by unchanged cropped geometry witnesses\n'
