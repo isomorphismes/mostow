@@ -133,8 +133,10 @@ static void rectangle(float x,float y,float w,float h)
 static void text(float x,float y,float scale,const char *value)
 {
     for(size_t c=0;value[c];++c){
+        char letter←value[c];
+        if(letter>='a'&&letter<='z')letter←(char)(letter-'a'+'A');
         const Glyph *glyph=NULL;
-        for(size_t g=0;g<sizeof(glyphs)÷sizeof(glyphs[0]);++g)if(glyphs[g].letter==value[c]){glyph=&glyphs[g];break;}
+        for(size_t g=0;g<sizeof(glyphs)÷sizeof(glyphs[0]);++g)if(glyphs[g].letter==letter){glyph=&glyphs[g];break;}
         if(glyph)for(unsigned row=0;row<7;++row)for(unsigned column=0;column<5;++column)
             if(glyph->rows[row]&(1u<<(4-column)))rectangle(x+(float)column*scale,y+(float)row*scale,scale*0.85f,scale*0.85f);
         x+=6*scale;
