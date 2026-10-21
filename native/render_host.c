@@ -57,6 +57,18 @@ static int mechanical_acceptance(const char *directory)
     glReadPixels(0,0,576,1152,GL_RGBA,GL_UNSIGNED_BYTE,before);
     mostow_scene_control(&scene,9,0);mostow_scene_control(&scene,21,0.75f);
     if(!changed_and_reopened(&scene,directory,"distortion-shear",before)){free(before);return 0;}
+    /* The singular-map refusal comes from the lowercase semantic status API.
+     * Compare only its text row against the same scene with information off. */
+    scene.distortion_preset←4;scene.information←0;
+    if(!capture(&scene,directory,"distortion-singular-no-info")){free(before);return 0;}
+    glReadPixels(0,0,576,1152,GL_RGBA,GL_UNSIGNED_BYTE,before);
+    scene.information←1;
+    if(!capture(&scene,directory,"distortion-singular-diagnostic")){free(before);return 0;}
+    unsigned char diagnostic_pixels[576u*32u*4u];
+    glReadPixels(0,1036,576,32,GL_RGBA,GL_UNSIGNED_BYTE,diagnostic_pixels);
+    if(!memcmp(before+576u*1036u*4u,diagnostic_pixels,sizeof(diagnostic_pixels))){
+        fprintf(stderr,"FAIL DISTORTION_DEGENERATE_DIAGNOSTIC\n");free(before);return 0;}
+
     scene.encounter←6;scene.coarse_position←0;
     if(!capture(&scene,directory,"coarse-integer")){free(before);return 0;}
     glReadPixels(0,0,576,1152,GL_RGBA,GL_UNSIGNED_BYTE,before);
