@@ -55,3 +55,10 @@ crossing word live. It must fail `MECHANICAL_GEOMETRY_VISIBLE quotient-crossed`.
 The full constant-quotient mutant remains as a separate control. The pants
 HUD also exposes all three cuff and transverse holonomy traces, and the m004
 volume readout explicitly identifies trial shapes when the reference is kept.
+
+The degenerate differential initially returned its refusal in lowercase while
+this bitmap alphabet supported uppercase only. The renderer now folds ASCII
+lowercase at the text boundary. A real-GLES witness compares just the refusal
+row against the identical singular state with information hidden. A seventh
+mutant removes that folding and must fail `DISTORTION_DEGENERATE_DIAGNOSTIC`;
+changed titles, preset names and geometry cannot satisfy this cropped witness.
