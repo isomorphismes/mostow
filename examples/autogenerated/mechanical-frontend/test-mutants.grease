@@ -15,12 +15,13 @@ setglobal ENV.LD_LIBRARY_PATH = "$gl/lib/x86_64-linux-gnu"
 # Freeze only the mathematical drawing input. The actual HUD still changes,
 # so a text-only screenshot comparison cannot incorrectly accept these cases.
 for mutant in ([
-    ['quotient', r's|else if(s->encounter==3)draw_octagon(s);|else if(s->encounter==3){MostowScene frozen;mostow_scene_init(\&frozen);draw_octagon(\&frozen);}|', 'quotient-crossed'],
-    ['quotient-markers', r's|MostowOctagonPoint marker←scene->quotient.position;|MostowOctagonPoint marker←{0,0};|; s|if(panel\&\&!mostow_octagon_apply(scene->quotient.lift,marker,\&marker))continue;|/* markers frozen, crossing word remains live */|', 'quotient-crossed'],
-    ['pants', r's|else if(s->encounter==4)draw_pants(s);|else if(s->encounter==4){MostowScene frozen;mostow_scene_init(\&frozen);draw_pants(\&frozen);}|', 'pants-twisted'],
-    ['distortion', r's|else if(s->encounter==5)draw_distortion(s);|else if(s->encounter==5){MostowScene frozen;mostow_scene_init(\&frozen);draw_distortion(\&frozen);}|', 'distortion-shear'],
-    ['coarse', r's|else if(s->encounter==6)draw_coarse(s);|else if(s->encounter==6){MostowScene frozen;mostow_scene_init(\&frozen);draw_coarse(\&frozen);}|', 'coarse-half'],
-    ['boundary', r's|else if(s->encounter==7)draw_rigidity_account(s,matrix);|else if(s->encounter==7){MostowScene frozen;mostow_scene_init(\&frozen);draw_rigidity_account(\&frozen,matrix);}|', 'rigidity-boundary-changed']
+    ['quotient', r's|else if(s->encounter==3)draw_octagon(s);|else if(s->encounter==3){MostowScene frozen;mostow_scene_init(\&frozen);draw_octagon(\&frozen);}|', 'MECHANICAL_GEOMETRY_VISIBLE quotient-crossed'],
+    ['quotient-markers', r's|MostowOctagonPoint marker←scene->quotient.position;|MostowOctagonPoint marker←{0,0};|; s|if(panel\&\&!mostow_octagon_apply(scene->quotient.lift,marker,\&marker))continue;|/* markers frozen, crossing word remains live */|', 'MECHANICAL_GEOMETRY_VISIBLE quotient-crossed'],
+    ['pants', r's|else if(s->encounter==4)draw_pants(s);|else if(s->encounter==4){MostowScene frozen;mostow_scene_init(\&frozen);draw_pants(\&frozen);}|', 'MECHANICAL_GEOMETRY_VISIBLE pants-twisted'],
+    ['distortion', r's|else if(s->encounter==5)draw_distortion(s);|else if(s->encounter==5){MostowScene frozen;mostow_scene_init(\&frozen);draw_distortion(\&frozen);}|', 'MECHANICAL_GEOMETRY_VISIBLE distortion-shear'],
+    ['coarse', r's|else if(s->encounter==6)draw_coarse(s);|else if(s->encounter==6){MostowScene frozen;mostow_scene_init(\&frozen);draw_coarse(\&frozen);}|', 'MECHANICAL_GEOMETRY_VISIBLE coarse-half'],
+    ['boundary', r's|else if(s->encounter==7)draw_rigidity_account(s,matrix);|else if(s->encounter==7){MostowScene frozen;mostow_scene_init(\&frozen);draw_rigidity_account(\&frozen,matrix);}|', 'MECHANICAL_GEOMETRY_VISIBLE rigidity-boundary-changed'],
+    ['degenerate-label', r'/if(letter>=/d', 'DISTORTION_DEGENERATE_DIAGNOSTIC']
 ]) {
     var name = mutant[0]
     mkdir -p "$output/$name"
@@ -37,11 +38,11 @@ for mutant in ([
         "$root/native/mostow_view.c" "$output/$name.c" "$root/native/render_host.c" \
         -L "$gl/lib/x86_64-linux-gnu" -l:libEGL.so.1 -l:libGLESv2.so.2 -lm -o "$output/$name-render"
     if "$output/$name-render" --acceptance "$output/$name" > "$output/$name.log" 2>&1 {
-        printf '\033[31mFAIL\033[0m constant geometry renderer passed: %s\n' "$name"
+        printf '\033[31mFAIL\033[0m renderer semantic mutation passed: %s\n' "$name"
         exit 1
     }
-    rg -F "FAIL MECHANICAL_GEOMETRY_VISIBLE $[mutant[2]]" "$output/$name.log"
+    rg -F "FAIL $[mutant[2]]" "$output/$name.log"
     sha256sum "$output/$name.c" "$output/$name-render"
-    printf '\033[32mPASS\033[0m rejected constant %s geometry with live numeric HUD\n' "$name"
+    printf '\033[32mPASS\033[0m rejected %s renderer with live semantic state\n' "$name"
 }
-printf '\033[32mPASS\033[0m six renderer-state mutations rejected by unchanged cropped geometry witnesses\n'
+printf '\033[32mPASS\033[0m seven renderer-state mutations rejected by geometry and refusal witnesses\n'
