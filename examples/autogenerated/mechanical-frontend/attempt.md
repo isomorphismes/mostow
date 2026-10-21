@@ -45,3 +45,13 @@ digests remain in those receipts rather than being promoted from this account.
 All evidence is host mathematical/render evidence. Phone installation,
 interaction, GPU behavior, persistence and resume require separate physical
 acceptance.
+
+
+The quotient witness uses GL rows 500–819 (screen y 332–651), inside the two
+disks. The earlier shared crop also contained the changing crossing-word
+caption at screen y 680, so changed text could satisfy a geometric witness.
+A sixth mutant now freezes only both quotient markers while leaving the real
+crossing word live. It must fail `MECHANICAL_GEOMETRY_VISIBLE quotient-crossed`.
+The full constant-quotient mutant remains as a separate control. The pants
+HUD also exposes all three cuff and transverse holonomy traces, and the m004
+volume readout explicitly identifies trial shapes when the reference is kept.
