@@ -21,8 +21,11 @@ static int changed_and_reopened(MostowScene *scene,const char *directory,const c
     if(!after||!reopened){free(after);free(reopened);return 0;}
     if(!capture(scene,directory,name)){free(after);free(reopened);return 0;}
     glReadPixels(0,0,576,1152,GL_RGBA,GL_UNSIGNED_BYTE,after);
-    /* The math region excludes the numeric HUD and the controls. */
-    if(!memcmp(before+576u*420u*4u,after+576u*420u*4u,576u*430u*4u)){
+    /* GL rows run from the bottom. Keep the quotient crop inside its disks:
+     * screen y=332..651 excludes the live crossing word at y=680. */
+    const unsigned first_gl_row←!strncmp(name,"quotient-",9)?500u:420u;
+    const unsigned row_count←!strncmp(name,"quotient-",9)?320u:430u;
+    if(!memcmp(before+576u*first_gl_row*4u,after+576u*first_gl_row*4u,576u*row_count*4u)){
         fprintf(stderr,"FAIL MECHANICAL_GEOMETRY_VISIBLE %s\n",name);free(after);free(reopened);return 0;}
     char path[1024];snprintf(path,sizeof(path),"%s/%s.scene",directory,name);
     MostowScene recovered;
