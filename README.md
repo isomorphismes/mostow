@@ -3,11 +3,15 @@
 Interactive mathematics from a living hyperbolic sheet and visible gluing
 through surface flexibility, local/coarse distortion, and Mostow rigidity.
 
-Three encounters share inspectable semantic state: a radius-2 living sheet with
+Eight linked encounters share inspectable semantic state: a radius-2 living sheet with
 clean/ink rendering and explanatory normals, and boundary-map string art with
 linked Klein/Poincaré views, and a figure-eight completeness encounter with
 freely varied ideal shapes, edge/cusp residuals and a retained complete
-reference. See [the figure-eight mathematical boundary](notes/figure-eight-completeness.md).
+reference, a genus-2 octagon quotient with finite cover and boundary navigation,
+two-pants Fenchel–Nielsen deformation, metric distortion ellipses, the proved
+integer-to-real quasi-isometry, and a navigable rigidity argument. See
+[the figure-eight mathematical boundary](notes/figure-eight-completeness.md) and
+[mechanical encounter controls and ownership](notes/mechanical-encounters.md).
 Phone controls include selection, orbit/pinch,
 pause/direct scrub, lighting, map parameters, save/reopen and PNG export with
 a companion scene. See [interaction and replay](notes/interactive-encounters.md).
@@ -34,10 +38,13 @@ The reading notes are:
 - [Hyperbolic crochet](books/hyperbolic-crochet.md)
 - [Papadopoulos on quasiconformal geometry](books/papadopoulos-quasiconformal.md)
 
-The full staged design is in [STAR M1](notes/STAR-M1.md). General gluing, FN,
-coarse-map and boundary encounters remain planned. The implemented `m004`
-shape experiment uses a sourced fixed equation matrix; it does not certify
-face-pairing topology or the general rigidity theorem.
+The full staged design is in [STAR M1](notes/STAR-M1.md). The fixed `m004`
+construction now checks pinned oriented face pairings, edge/cusp topology,
+primitive peripheral curves, derived gluing rows, completeness and ideal volume.
+The octagon verifies χ = −2 and area 4π. Pants holonomy and transverse lengths
+respond to all three lengths and twists; a full twist changes the marking.
+Floating-point residuals are numerical checks, not rigorous certification or a
+proof of the global rigidity theorem. See the per-encounter source notes.
 
 ## Build and evidence boundaries
 
@@ -54,10 +61,18 @@ the canonical packager, and emits per-APK receipts. It does not install or
 qualify either phone. The producer preflight additionally requires Mostow's
 package/signer registration in merged ai-ci policy.
 
-The package is `org.isomorphisms.mostow`, versionCode 3, versionName 0.3.
+The package is `org.isomorphisms.mostow`, versionCode 4, versionName 0.4.
 The certificate is the existing public development identity used by Seifert,
 not a new locally generated key. Future updates must preserve package and
 signer and use a nondecreasing versionCode.
+
+`tools/run-fp-host.grease` takes explicit Mostow, Flexible Pipes, Kitchen, Ike
+and independent AI-CI checkouts. It verifies immutable dependency revisions,
+then runs the prepared Kitchen/Ike stage through FP. This executes retained
+tests, all four kernels, constraint-removal mutations, semantic GLES changes,
+exact framebuffer reopening and the separately owned AI-CI oracle. The exact
+source/compiler/artifact identities and raw receipts are retained under
+`build/host`. No host result establishes A1 or C67 physical acceptance.
 
 ## External geometry references
 

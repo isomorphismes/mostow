@@ -7,8 +7,8 @@ var abi = ARGV[3]
 var output = ARGV[4]
 test -f "$substrate/apk/build-nativeactivity-apk.sh"
 setglobal ENV.ANDROID_PACKAGE_ID = 'org.isomorphisms.mostow'
-setglobal ENV.ANDROID_VERSION_CODE = '3'
-setglobal ENV.ANDROID_VERSION_NAME = '0.3'
+setglobal ENV.ANDROID_VERSION_CODE = '4'
+setglobal ENV.ANDROID_VERSION_NAME = '0.4'
 setglobal ENV.ANDROID_MIN_SDK = '21'
 setglobal ENV.ANDROID_TARGET_SDK = '34'
 setglobal ENV.ANDROID_KEYSTORE_TYPE = 'PKCS12'
