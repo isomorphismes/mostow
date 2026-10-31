@@ -11,7 +11,7 @@ runs:
       with:
         repository: dilapidated-shed/grease
         run-id: 37478624499
-        artifact-ids: 11419719229
+        artifact-ids: 12239653583
         merge-multiple: true
         github-token: ${{ github.token }}
         path: .grease-runtime

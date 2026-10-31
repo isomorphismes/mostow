@@ -11,7 +11,8 @@ for mutant in ([['flat-poincare', 's/return model?mostow_klein_to_poincare(chord
   sed "$[mutant[1]]" "$root/icky/mostow_scene.c" > "$output/$name.c"
   "$compiler" -fno-link-libatomic -std=c11 -O2 -Wall -Wextra -Werror -Wpedantic \
     "-DMOSTOW_SOURCE_REVISION=\"$revision\"" -I "$root/native" -I "$root/fixtures" \
-    "$root/icky/mostow_sheet.c" "$output/$name.c" "$root/icky/mostow_m004.c" "$root/native/mostow_view.c" \
+    "$root/icky/mostow_sheet.c" "$output/$name.c" "$root/icky/mostow_m004.c" \
+    "$root/icky/mostow_octagon.c" "$root/icky/mostow_pants.c" "$root/icky/mostow_distortion.c" "$root/native/mostow_view.c" \
     "$root/native/test_mostow_scene.c" -lm -o "$output/$name"
   if "$output/$name" "$root/fixtures/mobius-classification.tsv" "$output/$name.scene" > "$output/$name.log" 2>&1 {
     printf '\033[31mFAIL\033[0m implementation mutant passed: %s\n' "$name"

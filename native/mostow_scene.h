@@ -3,6 +3,9 @@
 #include "mostow.h"
 #include "mostow_view.h"
 #include "mostow_m004.h"
+#include "mostow_octagon.h"
+#include "mostow_pants.h"
+#include "mostow_distortion.h"
 #ifndef MOSTOW_SOURCE_REVISION
 #define MOSTOW_SOURCE_REVISION "unbound-development-source"
 #endif
@@ -27,6 +30,10 @@ typedef struct {
     int32_t selected_string,preset,control_page,map_parameter;
     MostowAnchor anchor;
     MostowM004Experiment rigidity;
+    MostowOctagonNavigator quotient;
+    MostowPantsParameters pants;
+    double distortion_amount,coarse_position;
+    int32_t mechanical_parameter,distortion_preset,distortion_metric,lesson_page,navigation_error;
 } MostowScene;
 typedef struct {
     uint32_t identity;
@@ -56,4 +63,8 @@ void mostow_scene_control_rect(int width,int height,int slot,float rect[4]);
 int mostow_scene_control_hit(const MostowScene *scene,int width,int height,float x,float y);
 const char *mostow_scene_control_label(const MostowScene *scene,int slot);
 void mostow_scene_control(MostowScene *scene,int control,float fraction);
+MostowDifferential2 mostow_scene_differential(const MostowScene *scene);
+void mostow_scene_tangent_metrics(const MostowScene *scene,MostowTangentMetric *source,
+                                 MostowTangentMetric *target);
+MostowDistortionDiagnostics mostow_scene_distortion(const MostowScene *scene);
 #endif

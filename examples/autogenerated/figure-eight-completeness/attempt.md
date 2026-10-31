@@ -33,3 +33,22 @@ incomplete pair, invalid orientation/nonfinite input, and logarithmic winding.
 Needed language work: a qualified complex scalar/record ABI and direct target
 lowering for these checked shape and residual operations. Acceptance must run
 the actual emitted module at the declared ABI before replacing this consumer.
+
+## Mechanical construction continuation, 20 October 2026 UTC
+
+The explicit implementation assignment preserves compositional ICKY C as the
+authoritative owner. The C continuation adds exact pinned face permutations,
+edge and directed-edge equivalence, the eight-triangle torus cusp,
+signed meridian/longitude currents, primitive integral peripheral homology,
+derivation of all equation rows, logarithmic branch/error diagnostics,
+ideal volumes with separate series-tail and floating-error fields, and
+actual Möbius/nonconformal boundary cross-ratios. It introduces no new
+Idriç claim or application runtime. The semantic/proof/source record is
+`notes/m004-topology-volume.md`; deterministic independent oracle values are
+`fixtures/m004-reference.tsv`; `test-mutations.grease` modifies the actual
+implementation and requires the unchanged mathematical witness to reject it.
+
+The first Grease mutation-script parse failed because regular quoted strings
+contained ambiguous regex backslashes. Explicit raw `r''` regex strings
+correct the shell-language issue. This was a script parse failure, not a
+failure of the mathematical model or direct ICK source.

@@ -11,8 +11,12 @@
 void mostow_scene_init(MostowScene *scene)
 {
     memset(scene,0,sizeof(*scene));
-    scene->schema=3;scene->seed=1729;
+    scene->schema←4;scene->seed=1729;
     mostow_m004_init(&scene->rigidity);
+    mostow_octagon_navigator_init(&scene->quotient);
+    mostow_pants_init(&scene->pants);
+    scene->distortion_amount←1;
+    scene->coarse_position←0.25;
     snprintf(scene->source,sizeof(scene->source),"%s",MOSTOW_SOURCE_REVISION);
     snprintf(scene->fixture,sizeof(scene->fixture),"%s",MOSTOW_FIXTURE_REVISION);
     mostow_view_init(&scene->camera);
@@ -22,9 +26,16 @@ void mostow_scene_init(MostowScene *scene)
 }
 int mostow_scene_valid(const MostowScene *s)
 {
-    if(!s||s->schema!=3||strcmp(s->source,MOSTOW_SOURCE_REVISION)||
+    if(!s||s->schema!=4||strcmp(s->source,MOSTOW_SOURCE_REVISION)||
        strcmp(s->fixture,MOSTOW_FIXTURE_REVISION))return 0;
-    if(s->encounter<0||s->encounter>2||!mostow_m004_state_valid(&s->rigidity))return 0;
+    if(s->encounter<0||s->encounter>7||!mostow_m004_state_valid(&s->rigidity)||
+       !mostow_octagon_navigator_valid(&s->quotient)||!mostow_pants_state_valid(&s->pants))return 0;
+    if(!isfinite(s->distortion_amount)||fabs(s->distortion_amount)>3||
+       !isfinite(s->coarse_position)||fabs(s->coarse_position)>4||
+       s->mechanical_parameter<0||s->mechanical_parameter>5||
+       s->distortion_preset<0||s->distortion_preset>4||
+       s->distortion_metric<0||s->distortion_metric>1||
+       s->lesson_page<0||s->lesson_page>5||s->navigation_error<0||s->navigation_error>1)return 0;
     if(!isfinite(s->time)||s->time<0||s->time>1e9||
        !isfinite(s->camera.yaw)||fabsf(s->camera.yaw)>1e6f||
        !isfinite(s->camera.pitch)||fabsf(s->camera.pitch)>1.5f||
@@ -49,10 +60,12 @@ int mostow_scene_write(const MostowScene *s,const char *path)
     char temporary[1024];if(snprintf(temporary,sizeof(temporary),"%s.tmp",path)>=(int)sizeof(temporary))return 0;
     FILE *file=fopen(temporary,"w");if(!file)return 0;
     int ok=fprintf(file,
-      "MOSTOW_SCENE 3\nsource %s\nfixture %s\nseed %u\n"
+      "MOSTOW_SCENE 4\nsource %s\nfixture %s\nseed %u\n"
       "camera %a %a %a\ntime %a\nmap %a %a %a\nview %a %a\nlight %a %a %a\n"
       "flags %d %d %d %d %d %d %d %d\nselection %d %d %a %a %a\ncontrols %d %d %d\n"
-      "m004 %a %a %a %a %d %u\nEND\n",
+      "m004 %a %a %a %a %d %u\n"
+      "pants %a %a %a %a %a %a\nmechanical %a %a %d %d %d %d %d\n"
+      "quotient %a %a %u %u\nlift %a %a %a %a %a %a %a %a %a\nword",
       s->source,s->fixture,s->seed,(double)s->camera.yaw,(double)s->camera.pitch,(double)s->camera.distance,
       s->time,s->angle,s->boost,s->shear,s->view_turn,s->view_shift,
       (double)s->light[0],(double)s->light[1],(double)s->light[2],
@@ -61,7 +74,18 @@ int mostow_scene_write(const MostowScene *s,const char *path)
       s->preset,s->control_page,s->map_parameter,
       s->rigidity.trial[0].real,s->rigidity.trial[0].imaginary,
       s->rigidity.trial[1].real,s->rigidity.trial[1].imaginary,
-      s->rigidity.enforce_completeness,s->rigidity.selected_coordinate)>0;
+      s->rigidity.enforce_completeness,s->rigidity.selected_coordinate,
+      s->pants.lengths[0],s->pants.lengths[1],s->pants.lengths[2],
+      s->pants.twists[0],s->pants.twists[1],s->pants.twists[2],
+      s->distortion_amount,s->coarse_position,s->mechanical_parameter,s->distortion_preset,
+      s->distortion_metric,s->lesson_page,s->navigation_error,
+      s->quotient.position.x,s->quotient.position.y,s->quotient.word_length,s->quotient.total_crossings,
+      s->quotient.lift.entry[0][0],s->quotient.lift.entry[0][1],s->quotient.lift.entry[0][2],
+      s->quotient.lift.entry[1][0],s->quotient.lift.entry[1][1],s->quotient.lift.entry[1][2],
+      s->quotient.lift.entry[2][0],s->quotient.lift.entry[2][1],s->quotient.lift.entry[2][2])>0;
+    for(unsigned index←0;index<MOSTOW_OCTAGON_WORD_CAPACITY;++index)
+        if(fprintf(file," %d",s->quotient.word[index])<0)ok←0;
+    if(fprintf(file,"\nEND\n")<0)ok←0;
     if(fflush(file)||fsync(fileno(file)))ok=0;
     if(fclose(file))ok=0;
     if(!ok||rename(temporary,path)){remove(temporary);return 0;}return 1;
@@ -75,7 +99,9 @@ int mostow_scene_read(MostowScene *scene,const char *path)
       "MOSTOW_SCENE %u source %64s fixture %64s seed %u camera %la %la %la time %la "
       "map %la %la %la view %la %la light %la %la %la flags %d %d %d %d %d %d %d %d "
       "selection %d %d %la %la %la controls %d %d %d "
-      "m004 %la %la %la %la %d %u %7s",
+      "m004 %la %la %la %la %d %u "
+      "pants %la %la %la %la %la %la mechanical %la %la %d %d %d %d %d "
+      "quotient %la %la %u %u lift %la %la %la %la %la %la %la %la %la word",
       &version,value.source,value.fixture,&value.seed,&yaw,&pitch,&distance,&value.time,
       &value.angle,&value.boost,&value.shear,&value.view_turn,&value.view_shift,&lx,&ly,&lz,
       &value.encounter,&value.model,&value.illustrated,&value.paused,&value.rings,&value.mesh,&value.normal,&value.information,
@@ -83,12 +109,23 @@ int mostow_scene_read(MostowScene *scene,const char *path)
       &value.preset,&value.control_page,&value.map_parameter,
       &value.rigidity.trial[0].real,&value.rigidity.trial[0].imaginary,
       &value.rigidity.trial[1].real,&value.rigidity.trial[1].imaginary,
-      &value.rigidity.enforce_completeness,&value.rigidity.selected_coordinate,end);
+      &value.rigidity.enforce_completeness,&value.rigidity.selected_coordinate,
+      &value.pants.lengths[0],&value.pants.lengths[1],&value.pants.lengths[2],
+      &value.pants.twists[0],&value.pants.twists[1],&value.pants.twists[2],
+      &value.distortion_amount,&value.coarse_position,&value.mechanical_parameter,
+      &value.distortion_preset,&value.distortion_metric,&value.lesson_page,&value.navigation_error,
+      &value.quotient.position.x,&value.quotient.position.y,&value.quotient.word_length,&value.quotient.total_crossings,
+      &value.quotient.lift.entry[0][0],&value.quotient.lift.entry[0][1],&value.quotient.lift.entry[0][2],
+      &value.quotient.lift.entry[1][0],&value.quotient.lift.entry[1][1],&value.quotient.lift.entry[1][2],
+      &value.quotient.lift.entry[2][0],&value.quotient.lift.entry[2][1],&value.quotient.lift.entry[2][2]);
+    for(unsigned index←0;index<MOSTOW_OCTAGON_WORD_CAPACITY;++index)
+        if(fscanf(file," %d",&value.quotient.word[index])!=1)count←-1;
+    if(fscanf(file," %7s",end)!=1)count←-1;
     int tail;do{tail=fgetc(file);}while(tail==' '||tail=='\n'||tail=='\r'||tail=='\t');
     int io=ferror(file);fclose(file);
     value.schema=version;value.camera.yaw=(float)yaw;value.camera.pitch=(float)pitch;value.camera.distance=(float)distance;
     value.light[0]=(float)lx;value.light[1]=(float)ly;value.light[2]=(float)lz;
-    if(count!=39||strcmp(end,"END")||tail!=EOF||io||!mostow_scene_valid(&value))return 0;
+    if(count!=64||strcmp(end,"END")||tail!=EOF||io||!mostow_scene_valid(&value))return 0;
     *scene=value;return 1;
 }
 MostowBoundaryMap mostow_boundary_map(double angle,double boost,double shear)
@@ -236,7 +273,29 @@ const char *mostow_scene_control_label(const MostowScene *s,int slot)
     static const char *labels[3][6]={{"SHEET","INK","DETAIL","PAUSE","SAVE","MORE"},
       {"RINGS","MESH","NORMAL","LIGHT L","LIGHT R","MORE"},
       {"REOPEN","EXPORT","MODEL","PRESET","MAP","MORE"}};
-    if(s->control_page==0&&slot==0)return s->encounter==2?"M004":(s->encounter?"STRINGS":"SHEET");
+    static const char *encounters[8]←{"SHEET","STRINGS","M004","QUOTIENT","PANTS","DISTORTION","COARSE","RIGIDITY"};
+    if(s->control_page==0&&slot==0)return encounters[s->encounter];
+    if(s->encounter>=3&&s->control_page==1){
+        static const char *controls[5][6]←{
+            {"LEFT","RIGHT","UP","DOWN","RESET","MORE"},
+            {"LENGTH 1","LENGTH 2","LENGTH 3","TWIST 1","TWIST 2","MORE"},
+            {"ROTATE","SCALE","SHEAR","REFLECT","COLLAPSE","MORE"},
+            {"MINUS 1","PLUS 1","MINUS .5","PLUS .5","ZERO","MORE"},
+            {"PREVIOUS","NEXT","SURFACES","M004","DISTORTION","MORE"}
+        };
+        return controls[s->encounter-3][slot];
+    }
+    if(s->encounter>=3&&s->control_page==2){
+        static const char *controls[5][6]←{
+            {"REOPEN","EXPORT","COVER","PANTS","RIGIDITY","MORE"},
+            {"REOPEN","EXPORT","TWIST 3","RESET","RIGIDITY","MORE"},
+            {"REOPEN","EXPORT","METRICS","NEXT MAP","RIGIDITY","MORE"},
+            {"REOPEN","EXPORT","ZERO","HALF","RIGIDITY","MORE"},
+            {"REOPEN","EXPORT","PREVIOUS","NEXT","M004","MORE"}
+        };
+        if(s->encounter==3&&slot==2)return s->model?"9 TILES":"1 TILE";
+        return controls[s->encounter-3][slot];
+    }
     if(s->encounter==2&&s->control_page==1){static const char *shape_parameters[6]={"Z0 REAL","Z0 IMAG","Z1 REAL","Z1 IMAG","REGULAR","MORE"};return shape_parameters[slot];}
     if(s->encounter==2&&s->control_page==2&&slot==2)return s->rigidity.enforce_completeness?"FREE":"COMPLETE";
     if(s->encounter==2&&s->control_page==2&&slot==3)return "EDGE ONLY";
@@ -246,10 +305,76 @@ const char *mostow_scene_control_label(const MostowScene *s,int slot)
     if(s->encounter==1&&s->control_page==1){static const char *parameters[6]={"ANGLE","BOOST","SHEAR","VIEW L","VIEW R","MORE"};return parameters[slot];}
     return labels[s->control_page][slot];
 }
+MostowDifferential2 mostow_scene_differential(const MostowScene *s)
+{
+    const double amount←s->distortion_amount;
+    switch(s->distortion_preset){
+      case 0:return (MostowDifferential2){cos(amount),-sin(amount),sin(amount),cos(amount)};
+      case 1:{const double scale←exp(amount);return (MostowDifferential2){scale,0,0,scale};}
+      case 2:return (MostowDifferential2){1,amount,0,1};
+      case 3:return (MostowDifferential2){1,amount,0,-1};
+      default:return (MostowDifferential2){1,amount,0,0};
+    }
+}
+void mostow_scene_tangent_metrics(const MostowScene *s,MostowTangentMetric *source,
+                                 MostowTangentMetric *target)
+{
+    *source←s->distortion_metric?(MostowTangentMetric){4,0,1}:(MostowTangentMetric){1,0,1};
+    *target←(MostowTangentMetric){1,0,1};
+}
+MostowDistortionDiagnostics mostow_scene_distortion(const MostowScene *s)
+{
+    MostowTangentMetric source,target;mostow_scene_tangent_metrics(s,&source,&target);
+    return mostow_distortion_measure(mostow_scene_differential(s),source,target);
+}
+static void mechanical_control(MostowScene *s,int control,float fraction)
+{
+    if(s->encounter==3){
+        if(control>=7&&control<=10){MostowOctagon octagon;mostow_octagon_init(&octagon);
+            MostowOctagonPoint desired←s->quotient.position;
+            if(control<=8)desired.x+=(control==7?-0.14:0.14);
+            else desired.y+=(control==9?0.14:-0.14);
+            if(hypot(desired.x,desired.y)>=0.99){s->navigation_error←1;return;}
+            s->navigation_error←!mostow_octagon_move(&octagon,&s->quotient,desired);return;}
+        if(control==11){mostow_octagon_navigator_init(&s->quotient);s->navigation_error←0;return;}
+        if(control==15){s->model←!s->model;return;}
+        if(control==16){s->encounter←4;return;}
+    }else if(s->encounter==4){
+        if(control>=7&&control<=11){s->mechanical_parameter←control-7;return;}
+        if(control==15){s->mechanical_parameter←5;return;}
+        if(control==16){mostow_pants_init(&s->pants);return;}
+        if(control==21||control==23){
+            if(s->mechanical_parameter<3)s->pants.lengths[s->mechanical_parameter]←0.75+2.25*fraction;
+            else s->pants.twists[s->mechanical_parameter-3]←4*fraction-2;
+            return;}
+    }else if(s->encounter==5){
+        if(control>=7&&control<=11){s->distortion_preset←control-7;return;}
+        if(control==15){s->distortion_metric←!s->distortion_metric;return;}
+        if(control==16){s->distortion_preset←(s->distortion_preset+1)%5;return;}
+        if(control==21||control==23){s->distortion_amount←6*fraction-3;return;}
+    }else if(s->encounter==6){
+        if(control>=7&&control<=10){
+            const double steps[4]←{-1,1,-0.5,0.5};
+            s->coarse_position←fmax(-4,fmin(4,s->coarse_position+steps[control-7]));return;}
+        if(control==11||control==15){s->coarse_position←0;return;}
+        if(control==16){s->coarse_position←0.5;return;}
+        if(control==21||control==23){s->coarse_position←8*fraction-4;return;}
+    }else if(s->encounter==7){
+        if(control==21||control==23){s->distortion_amount←6*fraction-3;return;}
+        if(control==7||control==15){s->lesson_page←(s->lesson_page+5)%6;return;}
+        if(control==8||control==16){s->lesson_page←(s->lesson_page+1)%6;return;}
+        if(control==9){s->encounter←4;return;}
+        if(control==10||control==17){s->encounter←2;return;}
+        if(control==11){s->encounter←5;return;}
+    }
+    if(control==17){s->encounter←7;s->control_page←1;}
+}
 void mostow_scene_control(MostowScene *s,int control,float fraction)
 {
     fraction=fmaxf(0,fminf(1,fraction));
     if(control==6||control==12||control==18){s->control_page=(s->control_page+1)%3;return;}
+    if(control==1){s->encounter←(s->encounter+1)%8;return;}
+    if(s->encounter>=3&&control>=7){mechanical_control(s,control,fraction);return;}
     if(s->encounter==2){
         if(control>=7&&control<=10){s->rigidity.selected_coordinate=(unsigned)(control-7);return;}
         if(control==11){mostow_m004_complete_shapes(s->rigidity.trial);return;}
@@ -261,7 +386,7 @@ void mostow_scene_control(MostowScene *s,int control,float fraction)
             return;}
     }
     switch(control){
-      case 1:s->encounter=(s->encounter+1)%3;break;case 2:s->illustrated=!s->illustrated;break;
+      case 2:s->illustrated=!s->illustrated;break;
       case 3:s->information=!s->information;break;case 4:s->paused=!s->paused;break;
       case 7:case 8:case 9:
         if(s->encounter)s->map_parameter=control-7;
