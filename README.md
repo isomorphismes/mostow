@@ -7,7 +7,8 @@ Eight linked encounters share inspectable semantic state: a radius-2 living shee
 clean/ink rendering and explanatory normals, and boundary-map string art with
 linked Klein/Poincaré views, and a figure-eight completeness encounter with
 freely varied ideal shapes, edge/cusp residuals and a retained complete
-reference, a genus-2 octagon quotient with finite cover and boundary navigation,
+reference, a genus-2 octagon quotient with boundary navigation and a nine-tile
+view of its universal cover,
 two-pants Fenchel–Nielsen deformation, metric distortion ellipses, the proved
 integer-to-real quasi-isometry, and a navigable rigidity argument. See
 [the figure-eight mathematical boundary](notes/figure-eight-completeness.md) and
