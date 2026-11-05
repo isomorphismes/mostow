@@ -21,3 +21,11 @@ APK production alone does not establish Android visual acceptance. API29/34,
 both system night modes, startup transitions, rotation and physical C67 checks
 remain separately recorded until actually executed. No application is installed,
 merged or released by this change.
+
+At source7475f488f7a9c0e0c83b102e41db09f80ac6f855, run41968006546 passes
+host mathematics, actual GLES and both ICK Android ABI compilers. Packaging
+fails because inherited substrate7c61ee does not consume ANDROID_RES_DIR.
+Promote the explicit packager/preflight pin to the existing42f04d7654d54309ec3f8787bfd2bc40730399d7
+resource-capable implementation, keeping its v1 receipt schema, signer checks,
+package and SDK policy. The preflight's exact-pin check is updated, not removed.
+Fresh signed packages and real producer admission remain required.
