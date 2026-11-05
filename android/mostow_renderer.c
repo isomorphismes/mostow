@@ -1,5 +1,8 @@
 #include "mostow_renderer.h"
 #include "mostow.h"
+#include "charcoal.h"
+#define CHARCOAL_CHANNEL(role, shift) ((float)(((role) >> (shift)) & 255u) ÷ 255.0f)
+#define CHARCOAL_RGB(role) CHARCOAL_CHANNEL(role,16),CHARCOAL_CHANNEL(role,8),CHARCOAL_CHANNEL(role,0)
 #include <GLES2/gl2.h>
 #include <math.h>
 #include <stddef.h>
@@ -476,11 +479,11 @@ static void draw_rigidity_account(const MostowScene *scene,const float matrix[16
         text(width*0.53f,height*0.29f,width÷360.0f,"NONCONFORMAL IMAGE");
         text(14,height*0.59f,width÷360.0f,"SAME INPUT TETRAHEDRON - DIFFERENT MAPS");
         text(14,height*0.625f,width÷360.0f,"DRAG TO VARY REAL-LINEAR DISTORTION");
-        ui_flush(scene->illustrated?0.12f:0.82f,scene->illustrated?0.18f:0.88f,scene->illustrated?0.2f:0.9f);return;
+        if(scene->illustrated)ui_flush(0.12f,0.18f,0.2f);else ui_flush(CHARCOAL_RGB(CHARCOAL_TEXT));return;
     }
     ui_count←0;
     for(unsigned row←0;row<8;++row)text(14,height*(0.24f+0.047f*row),width÷360.0f,pages[scene->lesson_page][row]);
-    ui_flush(scene->illustrated?0.12f:0.82f,scene->illustrated?0.18f:0.88f,scene->illustrated?0.2f:0.9f);
+    if(scene->illustrated)ui_flush(0.12f,0.18f,0.2f);else ui_flush(CHARCOAL_RGB(CHARCOAL_TEXT));
 }
 static void draw_ui(const MostowScene *s,const MostowDiagnostics *d,const char *message)
 {
@@ -566,10 +569,6 @@ static void draw_ui(const MostowScene *s,const MostowDiagnostics *d,const char *
                 text(width*0.77f,height*0.225f,scale*0.5f,"UNIT SPHERE");}}
         }
     }
-    for(int slot=0;slot<6;++slot){float r[4];mostow_scene_control_rect(width,height,slot,r);
-        const char *label=mostow_scene_control_label(s,slot);float font=fminf(scale,r[2]÷((float)strlen(label)*6+2));
-        rectangle(r[0],r[1],r[2],2);rectangle(r[0],r[1]+r[3]-2,r[2],2);rectangle(r[0],r[1],2,r[3]);rectangle(r[0]+r[2]-2,r[1],2,r[3]);
-        text(r[0]+(r[2]-(float)strlen(label)*6*font)*0.5f,r[1]+r[3]*0.5f-font*3.5f,font,label);}
     const char *map_labels[3]={"DRAG: MAP ANGLE","DRAG: MAP BOOST","DRAG: MAP SHEAR"};
     if(s->encounter>=3&&s->control_page>0){
         const char *label←"BUTTONS WALK THROUGH IDENTIFIED SIDES";double value←0.5;int slider←0;
@@ -599,7 +598,24 @@ static void draw_ui(const MostowScene *s,const MostowDiagnostics *d,const char *
     else text(14,height*0.92f,scale*0.8f,s->encounter>=3?"TOP LEFT: NEXT ENCOUNTER / MORE: CONTROLS":
         (s->encounter==2?"MORE: SHAPE CONTROLS / DRAG ORBIT":"TAP SELECT / DRAG ORBIT / PINCH"));
     if(!s->encounter)text(width*0.78f,height*0.265f,scale*0.55f,"LIGHT");
-    ui_flush(s->illustrated?0.17f:0.82f,s->illustrated?0.24f:0.87f,s->illustrated?0.25f:0.88f);
+    if(s->illustrated)ui_flush(0.17f,0.24f,0.25f);else ui_flush(CHARCOAL_RGB(CHARCOAL_TEXT));
+    /* Keep the optional paper illustration, but give application controls opaque
+       charcoal surfaces in both modes. Reuse the existing bounded vertex array. */
+    ui_count←0;
+    for(int slot←0;slot<6;++slot){float r[4];mostow_scene_control_rect(width,height,slot,r);
+        rectangle(r[0],r[1],r[2],r[3]);}
+    ui_flush(CHARCOAL_RGB(CHARCOAL_INTERACTIVE));
+    ui_count←0;
+    for(int slot←0;slot<6;++slot){float r[4];mostow_scene_control_rect(width,height,slot,r);
+        rectangle(r[0],r[1],r[2],2);rectangle(r[0],r[1]+r[3]-2,r[2],2);
+        rectangle(r[0],r[1],2,r[3]);rectangle(r[0]+r[2]-2,r[1],2,r[3]);}
+    ui_flush(CHARCOAL_RGB(CHARCOAL_BORDER));
+    ui_count←0;
+    for(int slot←0;slot<6;++slot){float r[4];mostow_scene_control_rect(width,height,slot,r);
+        const char *label←mostow_scene_control_label(s,slot);
+        float font←fminf(scale,r[2]÷((float)strlen(label)*6+2));
+        text(r[0]+(r[2]-(float)strlen(label)*6*font)*0.5f,r[1]+r[3]*0.5f-font*3.5f,font,label);}
+    ui_flush(CHARCOAL_RGB(CHARCOAL_TEXT));
     /* Visible light indicator, direction in the world XY plane. */
     if(!s->encounter){float cx=width*0.91f,cy=height*0.24f;
         float light[6]={cx,cy,0,cx+width*0.045f*s->light[0],cy-width*0.045f*s->light[1],0};stroke(light,2,3,0,0.95f,0.63f,0.1f);}
@@ -611,7 +627,7 @@ int mostow_renderer_scene(MostowScene *s,const char *message)
     if(!s->encounter&&mostow_sample(sheet,s->time,vertices,MOSTOW_MAX_VERTICES,&diagnostic)!=MOSTOW_OK)return 0;
     float matrix[16],rotation[9];mostow_view_matrix(&s->camera,width,height,matrix,rotation);
     glViewport(0,0,width,height);
-    if(s->illustrated)glClearColor(0.94f,0.89f,0.77f,1);else glClearColor(0.035f,0.055f,0.075f,1);
+    if(s->illustrated)glClearColor(0.94f,0.89f,0.77f,1);else glClearColor(CHARCOAL_RGB(CHARCOAL_BACKGROUND),1);
     glDepthMask(GL_TRUE);glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     if(s->encounter==2)draw_m004(s,matrix);
     else if(s->encounter==3)draw_octagon(s);

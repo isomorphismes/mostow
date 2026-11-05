@@ -17,5 +17,6 @@ setglobal ENV.ANDROID_STORE_PASSWORD = 'wegert-debug'
 setglobal ENV.ANDROID_KEY_PASSWORD = 'wegert-debug'
 setglobal ENV.ANDROID_EXPECTED_CERT_SHA256 = 'de9b1d47c5a65e6d46a204b79dd9ee566b9d3c9832ba81ebc4213d3392e92ff9'
 setglobal ENV.ANDROID_REQUIRE_NO_DEX = '1'
+setglobal ENV.ANDROID_RES_DIR = "$root/android/res"
 # Do not create a key or change the certificate to work around a failed check.
 bash "$substrate/apk/build-nativeactivity-apk.sh" "$root/android/AndroidManifest.xml" "$library" "$abi" "$output"
