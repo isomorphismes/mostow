@@ -179,6 +179,13 @@ int main(int argc,char **argv)
     if(!pixels)return 2;
     glReadPixels(0,0,width,height,GL_RGBA,GL_UNSIGNED_BYTE,pixels);
     if(glGetError()!=GL_NO_ERROR)return 1;
+    /* These default-scene samples qualify the real renderer, not token text. */
+    const unsigned char *margin←pixels+((size_t)(height-1)*width)*4;
+    if(margin[0]!=33||margin[1]!=33||margin[2]!=33)return 1;
+    float control[4];mostow_scene_control_rect(width,height,0,control);
+    int control_x←(int)control[0]+4,control_y←(int)control[1]+4;
+    const unsigned char *button←pixels+((size_t)(height-1-control_y)*width+(size_t)control_x)*4;
+    if(button[0]!=56||button[1]!=56||button[2]!=56)return 1;
     FILE *output=fopen(argv[1],"wb");if(!output)return 2;
     fprintf(output,"P6\n%d %d\n255\n",width,height);
     for(int y=height-1;y>=0;--y)for(int x=0;x<width;++x)
