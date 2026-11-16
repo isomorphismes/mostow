@@ -1,0 +1,33 @@
+#!/usr/bin/env grease
+# ROOT KITCHEN IKE_SOURCE INDEPENDENT_ACCEPTANCE; invoked as an FP stage.
+var root = $(git -C "$[ARGV[0]]" rev-parse --show-toplevel)
+var kitchen = ARGV[1]
+var ike_source = ARGV[2]
+var acceptance = ARGV[3]
+var compiler = ENV.MOSTOW_HOST_COMPILER
+var grease = ENV.MOSTOW_GREASE
+test $(git -C "$kitchen" rev-parse HEAD) = 4274385e040eb712086ebd54826c3d41b42a8a6c
+test $(git -C "$ike_source" rev-parse HEAD) = 93f9eb0aee9094757414df8a7929c89b6a294b0c
+test $(git -C "$acceptance" rev-parse HEAD) = 59f0c46a64d6f2ec829b06ac728769a7c8ede71b
+git -C "$root" diff --quiet HEAD -- icky native android tools fixtures ci examples
+git -C "$kitchen" diff --quiet HEAD -- tasks/mostow-mechanical
+git -C "$ike_source" diff --quiet HEAD -- ike.c
+git -C "$acceptance" diff --quiet HEAD -- mostow
+test -x "$compiler"
+test -x "$grease"
+mkdir -p "$root/build/host"
+var revision = $(git -C "$root" rev-parse HEAD)
+printf '%s\n' "$revision" > "$root/build/host/source-revision.txt"
+sha256sum "$compiler" "$ike_source/ike.c" "$kitchen/tasks/mostow-mechanical/2.grease" \
+  "$kitchen/tasks/mostow-mechanical/Ikefile" > "$root/build/host/producer-inputs.tsv"
+"$compiler" -fno-link-libatomic -std=c11 -O2 -Wall -Wextra -Werror -Wpedantic \
+  "$ike_source/ike.c" -o "$root/build/host/ike"
+setglobal ENV.MOSTOW_IKE = "$root/build/host/ike"
+setglobal ENV.MOSTOW_AI_CI = acceptance
+setglobal ENV.IKE_RECEIPT = "$root/build/host/ike-execution.tsv"
+"$grease" "$kitchen/tasks/mostow-mechanical/2.grease" \
+  "$kitchen/tasks/mostow-mechanical" "$root" accepted-host
+test $(git -C "$root" rev-parse HEAD) = "$revision"
+git -C "$root" diff --quiet HEAD -- icky native android tools fixtures ci examples
+sha256sum "$root/build/host/ike" "$root/build/host/render-mostow" \
+  "$root/build/host/independent/verify" > "$root/build/host/qualified-host-artifacts.tsv"

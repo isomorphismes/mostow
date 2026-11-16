@@ -14,6 +14,76 @@ static int capture(MostowScene *scene,const char *directory,const char *name)
        snprintf(record,sizeof(record),"%s/%s.scene",directory,name)>=(int)sizeof(record))return 0;
     return mostow_renderer_scene(scene,NULL)&&mostow_renderer_export(scene,image,record);
 }
+static int changed_and_reopened(MostowScene *scene,const char *directory,const char *name,
+                                const unsigned char *before)
+{
+    unsigned char *after←malloc(576u*1152u*4u),*reopened←malloc(576u*1152u*4u);
+    if(!after||!reopened){free(after);free(reopened);return 0;}
+    if(!capture(scene,directory,name)){free(after);free(reopened);return 0;}
+    glReadPixels(0,0,576,1152,GL_RGBA,GL_UNSIGNED_BYTE,after);
+    /* GL rows run from the bottom. Keep the quotient crop inside its disks:
+     * screen y=332..651 excludes the live crossing word at y=680. */
+    const unsigned first_gl_row←!strncmp(name,"quotient-",9)?500u:420u;
+    const unsigned row_count←!strncmp(name,"quotient-",9)?320u:430u;
+    if(!memcmp(before+576u*first_gl_row*4u,after+576u*first_gl_row*4u,576u*row_count*4u)){
+        fprintf(stderr,"FAIL MECHANICAL_GEOMETRY_VISIBLE %s\n",name);free(after);free(reopened);return 0;}
+    char path[1024];snprintf(path,sizeof(path),"%s/%s.scene",directory,name);
+    MostowScene recovered;
+    if(!mostow_scene_read(&recovered,path)||!mostow_renderer_scene(&recovered,NULL)){
+        free(after);free(reopened);return 0;}
+    glReadPixels(0,0,576,1152,GL_RGBA,GL_UNSIGNED_BYTE,reopened);
+    const int identical←!memcmp(after,reopened,576u*1152u*4u);
+    if(!identical)fprintf(stderr,"FAIL MECHANICAL_EXACT_REOPEN %s\n",name);
+    free(after);free(reopened);return identical;
+}
+static int mechanical_acceptance(const char *directory)
+{
+    unsigned char *before←malloc(576u*1152u*4u);if(!before)return 0;
+    MostowScene scene;mostow_scene_init(&scene);scene.paused←1;scene.control_page←1;
+    scene.encounter←3;
+    if(!capture(&scene,directory,"quotient-initial")){free(before);return 0;}
+    glReadPixels(0,0,576,1152,GL_RGBA,GL_UNSIGNED_BYTE,before);
+    MostowOctagon octagon;mostow_octagon_init(&octagon);
+    if(!mostow_octagon_move(&octagon,&scene.quotient,(MostowOctagonPoint){0.9,0.1})||
+       scene.quotient.total_crossings==0||!changed_and_reopened(&scene,directory,"quotient-crossed",before)){
+        free(before);return 0;}
+    scene.encounter←4;
+    if(!capture(&scene,directory,"pants-untwisted")){free(before);return 0;}
+    glReadPixels(0,0,576,1152,GL_RGBA,GL_UNSIGNED_BYTE,before);
+    mostow_scene_control(&scene,10,0);mostow_scene_control(&scene,21,0.75f);
+    if(!changed_and_reopened(&scene,directory,"pants-twisted",before)){free(before);return 0;}
+    scene.encounter←5;scene.distortion_amount←0;scene.distortion_preset←0;
+    if(!capture(&scene,directory,"distortion-conformal")){free(before);return 0;}
+    glReadPixels(0,0,576,1152,GL_RGBA,GL_UNSIGNED_BYTE,before);
+    mostow_scene_control(&scene,9,0);mostow_scene_control(&scene,21,0.75f);
+    if(!changed_and_reopened(&scene,directory,"distortion-shear",before)){free(before);return 0;}
+    /* The singular-map refusal comes from the lowercase semantic status API.
+     * Compare only its text row against the same scene with information off. */
+    scene.distortion_preset←4;scene.information←0;
+    if(!capture(&scene,directory,"distortion-singular-no-info")){free(before);return 0;}
+    glReadPixels(0,0,576,1152,GL_RGBA,GL_UNSIGNED_BYTE,before);
+    scene.information←1;
+    if(!capture(&scene,directory,"distortion-singular-diagnostic")){free(before);return 0;}
+    unsigned char diagnostic_pixels[576u*32u*4u];
+    glReadPixels(0,1036,576,32,GL_RGBA,GL_UNSIGNED_BYTE,diagnostic_pixels);
+    if(!memcmp(before+576u*1036u*4u,diagnostic_pixels,sizeof(diagnostic_pixels))){
+        fprintf(stderr,"FAIL DISTORTION_DEGENERATE_DIAGNOSTIC\n");free(before);return 0;}
+
+    scene.encounter←6;scene.coarse_position←0;
+    if(!capture(&scene,directory,"coarse-integer")){free(before);return 0;}
+    glReadPixels(0,0,576,1152,GL_RGBA,GL_UNSIGNED_BYTE,before);
+    mostow_scene_control(&scene,16,0);
+    if(!changed_and_reopened(&scene,directory,"coarse-half",before)){free(before);return 0;}
+    scene.encounter←7;scene.lesson_page←3;scene.distortion_amount←-1;
+    if(!capture(&scene,directory,"rigidity-boundary-first")){free(before);return 0;}
+    glReadPixels(0,0,576,1152,GL_RGBA,GL_UNSIGNED_BYTE,before);
+    mostow_scene_control(&scene,21,0.9f);
+    if(!changed_and_reopened(&scene,directory,"rigidity-boundary-changed",before)){free(before);return 0;}
+    for(int page←0;page<6;++page){scene.lesson_page←page;char name[64];
+        snprintf(name,sizeof(name),"rigidity-argument-%d",page);
+        if(!capture(&scene,directory,name)){free(before);return 0;}}
+    free(before);fprintf(stderr,"PASS MECHANICAL_RENDER quotient pants distortion coarse boundary exact-reopen\n");return 1;
+}
 static int acceptance(const char *directory)
 {
     MostowScene scene;mostow_scene_init(&scene);scene.time=37;scene.paused=1;
@@ -58,6 +128,7 @@ static int acceptance(const char *directory)
     if(memcmp(free_pixels,locked_pixels,576u*1152u*4u)){
         fprintf(stderr,"FAIL M004_EXACT_REOPEN\n");free(free_pixels);free(locked_pixels);return 0;}
     free(free_pixels);free(locked_pixels);
+    if(!mechanical_acceptance(directory))return 0;
     /* Recording replays the same application-owned control operations as touch. */
     mostow_scene_init(&scene);scene.paused=1;scene.anchor=(MostowAnchor){100,{0.2,0.3,0.5}};
     for(unsigned frame=0;frame<72;++frame){

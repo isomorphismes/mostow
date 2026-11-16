@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "name": "mostow-mechanical-host",
+  "description": "Build and execute Mostow's mathematical, scene, real GLES and independent AI-CI gates through prepared Kitchen and pinned Ike. No physical-device claim.",
+  "parameters": {
+    "ROOT": {"required":true,"pattern":"/.+"},
+    "EXECUTOR": {"required":true,"pattern":"/.+"},
+    "ENVELOPE": {"required":true,"pattern":"/.+"},
+    "KITCHEN_ROOT": {"required":true,"pattern":"/.+"},
+    "IKE_ROOT": {"required":true,"pattern":"/.+"},
+    "ACCEPTANCE_ROOT": {"required":true,"pattern":"/.+"}
+  },
+  "required_stages": ["authorization-envelope","application-revision","kitchen-ike-independent-host"],
+  "stages": [
+    {"kind":"command","name":"authorization-envelope","argv":["sha256sum","{{ENVELOPE}}"],"cwd":"."},
+    {"kind":"command","name":"application-revision","argv":["git","-C","{{ROOT}}","rev-parse","HEAD"],"cwd":"."},
+    {"kind":"command","name":"kitchen-ike-independent-host","argv":["grease","{{EXECUTOR}}","{{ROOT}}","{{KITCHEN_ROOT}}","{{IKE_ROOT}}","{{ACCEPTANCE_ROOT}}"],"cwd":"."}
+  ]
+}

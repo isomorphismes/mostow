@@ -37,7 +37,14 @@ incidence and orthogonality. Antipodes give a diameter; equal endpoints within
 The plain scene record retains compiled source/fixture, map, time, anchor/string,
 camera/model, light, treatment and seed. Save is atomic and file-synchronized;
 startup/reopen validate source/schema/fixture and reject older incompatible
-records. Pause persists state. Gesture pointers are not semantic state.
+records. Pause and Android's state-save callback persist state only when the
+file is absent or the existing record can be reopened by this build. An
+incompatible source/schema/fixture, truncated record, trailing data, or read
+failure blocks automatic replacement. In particular, starting an updated APK
+must not silently erase a rejected old scene on the next pause. Explicit SAVE
+still deliberately replaces the record; REOPEN and automatic saving never
+weaken source/schema/fixture validation. Cross-build scene migration remains
+unimplemented. Gesture pointers are not semantic state.
 EXPORT reads the actual framebuffer before swap, writing `mostow-export.png`
 and `mostow-export.scene` to NativeActivity's external app-files directory,
 or internal files if external storage is unavailable. The screen reports status;

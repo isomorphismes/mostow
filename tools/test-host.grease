@@ -10,7 +10,8 @@ test -x "$compiler"
 "$root/build/host/test-mostow"
 "$compiler" -fno-link-libatomic -std=c11 -O2 -Wall -Wextra -Werror -Wpedantic \
   "-DMOSTOW_SOURCE_REVISION=\"$revision\"" -I "$root/native" -I "$root/fixtures" \
-  "$root/icky/mostow_sheet.c" "$root/icky/mostow_scene.c" "$root/icky/mostow_m004.c" "$root/native/mostow_view.c" \
+  "$root/icky/mostow_sheet.c" "$root/icky/mostow_scene.c" "$root/icky/mostow_m004.c" \
+  "$root/icky/mostow_octagon.c" "$root/icky/mostow_pants.c" "$root/icky/mostow_distortion.c" "$root/native/mostow_view.c" \
   "$root/native/test_mostow_scene.c" -lm -o "$root/build/host/test-scene"
 "$root/build/host/test-scene" "$root/fixtures/mobius-classification.tsv" "$root/build/host/reopen.scene"
 "$compiler" -fno-link-libatomic -std=c11 -O2 -Wall -Wextra -Werror -Wpedantic \

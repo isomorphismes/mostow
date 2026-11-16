@@ -1,0 +1,15 @@
+SUN M-MECHANICAL-01 — Advance Mostow Through Verified Mathematical Constructions
+Human authorization: October 19, 2026. Owner: isomorphismes/mostow.
+Execution assignment supplied in ChatGPT; no dispatch or acceptance inferred.
+Starting source: b9abebf346a33ea46584d50ccc215e5f1ab5b725, main.
+Implement connected executable mathematical encounters in authoritative compositional ICKY C, separated from rendering, extending existing GLES2 and typed persistent scene state.
+1. Reconcile merged sheet, strings, m004 and reference catalogue; keep external-import draft #6 separate.
+2. Add pinned oriented m004 face pairings, edge classes, cusp-link topology and peripheral curves, gluing/completeness, explicit logarithmic branches/errors, tetrahedron and total volume. Retain regular and edge-only controls; compare independent SnapPy and algebraic identities. Floating-point tolerance is not rigorous certification.
+3. Build a genus-2 hyperbolic octagon with explicit pairing isometries, equivalence classes, Euler characteristic -2, area 4pi, finite neighboring cover tiles, boundary-crossing group elements and linked quotient/cover interaction. Spatial overlap is not identification.
+4. Build two pairs of pants with three positive cuff lengths and three real twists, selected closed geodesic lengths, holonomy/trace diagnostics; preserve genus, curvature -1, area 4pi. Verify two nonisometric marked surfaces independently.
+5. Implement metric-aware local singular values, dilatation, area/orientation diagnostics and circle/ellipse interaction. Include rotation, scaling, shear and degeneracy controls. Implement integer inclusion into the real line with globally proved L=1,A=0,B=1/2; finite visualization is not the infinite proof. No tree without a proof.
+6. Link cross-ratios, angles, tetrahedral volumes and regular maximum, Mobius/nonconformal boundary maps and flexible surfaces versus complete finite-volume 3-manifolds. Explicit theorem hypotheses and proof/numerical/cited evidence labels; finite examples do not prove rigidity.
+7. Preserve package identity/signer, ICKY ownership and A1 armeabi-v7a/C67 arm64-v8a; no new Python/Java/C++ app runtime. Use Idric only where qualified.
+8. Every new encounter needs domains, deterministic independent fixtures, positive/negative and constraint-removal mutation tests, numerical error reporting, semantic/render binding, source/compiler/artifact digests. Preserve all existing tests.
+9. Required route: Flexible Pipes -> maintained Kitchen/pinned Ike -> independent AI-CI. Cat Food delivers both standalone APKs. Physical installation/interaction/GPU/persistence/resume remain NOT VERIFIED without actual device evidence. Qualified integration only under applicable authority.
+10. Continue independent work at individual blockers; document exact causes without weakening correctness or inventing receipts. Completion requires all requested executable mathematics, passing independent checks, qualified integration and exact remaining blockers.
