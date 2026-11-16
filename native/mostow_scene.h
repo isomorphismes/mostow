@@ -43,6 +43,8 @@ typedef struct {
 void mostow_scene_init(MostowScene *scene);
 int mostow_scene_valid(const MostowScene *scene);
 int mostow_scene_write(const MostowScene *scene,const char *path);
+/* Lifecycle saves preserve any existing record that cannot be reopened. */
+int mostow_scene_autosave(const MostowScene *scene,const char *path);
 int mostow_scene_read(MostowScene *scene,const char *path);
 MostowBoundaryMap mostow_boundary_map(double angle,double boost,double shear);
 MostowMapClass mostow_map_classify(MostowBoundaryMap map);

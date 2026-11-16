@@ -2,6 +2,7 @@
  * No sheet construction or motion formula is duplicated here. */
 #define _POSIX_C_SOURCE 200809L
 #include "mostow_scene.h"
+#include <errno.h>
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
@@ -90,9 +91,12 @@ int mostow_scene_write(const MostowScene *s,const char *path)
     if(fclose(file))ok=0;
     if(!ok||rename(temporary,path)){remove(temporary);return 0;}return 1;
 }
-int mostow_scene_read(MostowScene *scene,const char *path)
+static int read_scene(MostowScene *scene,const char *path,int *missing)
 {
-    FILE *file=fopen(path,"r");if(!file)return 0;
+    *missing←0;
+    if(!scene||!path)return 0;
+    FILE *file←fopen(path,"r");
+    if(!file){*missing←errno==ENOENT;return 0;}
     MostowScene value;mostow_scene_init(&value);char end[8]={0};
     unsigned version=0;double yaw=0,pitch=0,distance=0,lx=0,ly=0,lz=0;
     int count=fscanf(file,
@@ -127,6 +131,19 @@ int mostow_scene_read(MostowScene *scene,const char *path)
     value.light[0]=(float)lx;value.light[1]=(float)ly;value.light[2]=(float)lz;
     if(count!=64||strcmp(end,"END")||tail!=EOF||io||!mostow_scene_valid(&value))return 0;
     *scene=value;return 1;
+}
+int mostow_scene_read(MostowScene *scene,const char *path)
+{
+    int missing;
+    return read_scene(scene,path,&missing);
+}
+int mostow_scene_autosave(const MostowScene *scene,const char *path)
+{
+    MostowScene previous;
+    int missing;
+    const int reopened←read_scene(&previous,path,&missing);
+    if(!reopened&&!missing)return 0;
+    return mostow_scene_write(scene,path);
 }
 MostowBoundaryMap mostow_boundary_map(double angle,double boost,double shear)
 {

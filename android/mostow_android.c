@@ -102,9 +102,17 @@ fail:
     __android_log_print(ANDROID_LOG_ERROR,"MostowNative","surface initialization failed EGL=0x%x",eglGetError());
     stop_surface(state);return false;
 }
+static void autosave_state(AndroidState *state)
+{
+    if(!mostow_scene_autosave(&state->scene,state->save_path)){
+        snprintf(state->message,sizeof(state->message),"AUTO SAVE FAILED / SAVED FILE KEPT");
+        __android_log_print(ANDROID_LOG_WARN,"MostowNative",
+            "Automatic scene save failed; no existing record was replaced");
+    }
+}
 static void save_state(AndroidState *state)
 {
-    (void)mostow_scene_write(&state->scene,state->save_path);
+    autosave_state(state);
     MostowScene *saved=malloc(sizeof(*saved));if(!saved)return;
     *saved=state->scene;
     state->app->savedState=saved;state->app->savedStateSize=sizeof(*saved);
@@ -123,7 +131,7 @@ static void handle_command(struct android_app *app,int32_t command)
       case APP_CMD_RESUME:state->resumed=true;state->previous_clock=0;state->redraw=true;break;
       case APP_CMD_GAINED_FOCUS:state->focused=true;state->previous_clock=0;state->redraw=true;break;
       case APP_CMD_PAUSE:state->resumed=false;state->previous_clock=0;release_gesture(state);report_frames(state);
-        (void)mostow_scene_write(&state->scene,state->save_path);break;
+        autosave_state(state);break;
       case APP_CMD_LOST_FOCUS:state->focused=false;state->previous_clock=0;release_gesture(state);report_frames(state);break;
       case APP_CMD_SAVE_STATE:save_state(state);break;
       default:break;
