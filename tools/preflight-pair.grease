@@ -7,7 +7,7 @@ var substrate = ARGV[3]
 var output = ARGV[4]
 test $(git -C "$pipes" rev-parse HEAD) = 9775aa324f523cbc6c758e89461915484a5a0fc7
 test $(git -C "$policy" rev-parse HEAD) = 01608a2493fa409463f70e8fbfd8a123ef59ee85
-test $(git -C "$substrate" rev-parse HEAD) = 7c61ee43e75f7c2dab9288edb0e10055898b36e6
+test $(git -C "$substrate" rev-parse HEAD) = 42f04d7654d54309ec3f8787bfd2bc40730399d7
 var grease = ENV.MOSTOW_GREASE
 test -x "$grease"
 var grease_dir = $(dirname "$grease")

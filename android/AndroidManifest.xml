@@ -4,7 +4,7 @@
     <uses-feature android:glEsVersion="0x00020000" android:required="true" />
     <application android:allowBackup="false" android:extractNativeLibs="true" android:hasCode="false"
         android:hardwareAccelerated="true" android:label="Mostow"
-        android:theme="@android:style/Theme.Material.NoActionBar.Fullscreen">
+        android:theme="@style/Theme.Charcoal.Mostow">
         <activity android:name="android.app.NativeActivity" android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="true">
             <meta-data android:name="android.app.lib_name" android:value="mostow" />
