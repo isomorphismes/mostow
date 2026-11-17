@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "mostow_scene.h"
+#include <errno.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -107,6 +108,39 @@ int main(int argc,char **argv)
     restored=scene;restored.quotient.word_length←MOSTOW_OCTAGON_WORD_CAPACITY+1;REQUIRE(!mostow_scene_valid(&restored),"BAD_GROUP_WORD");
     FILE *bad=fopen(argv[2],"a");REQUIRE(bad,"BAD_SAVE_OPEN");fputs("unexpected trailing record\n",bad);fclose(bad);
     REQUIRE(!mostow_scene_read(&restored,argv[2]),"TRAILING_RECORD_REJECTED");remove(argv[2]);
+    /* Lifecycle writes must not erase a record rejected on startup. Explicit
+       SAVE remains the user's deliberate replacement operation. */
+    REQUIRE(mostow_scene_autosave(&scene,argv[2]),"AUTOSAVE_NEW_FILE");
+    restored←scene;restored.time←38;
+    REQUIRE(mostow_scene_autosave(&restored,argv[2])&&mostow_scene_read(&scene,argv[2])&&
+            scene.time==38,"AUTOSAVE_COMPATIBLE_FILE");
+    for(unsigned damage←0;damage<5;++damage){
+        REQUIRE(mostow_scene_write(&scene,argv[2]),"AUTOSAVE_FIXTURE_SAVE");
+        char record[8192],after_record[8192];
+        FILE *record_file←fopen(argv[2],"rb");REQUIRE(record_file,"AUTOSAVE_FIXTURE_OPEN");
+        size_t length←fread(record,1,sizeof(record)-64,record_file);
+        REQUIRE(!ferror(record_file)&&feof(record_file)&&length>0,"AUTOSAVE_FIXTURE_READ");
+        REQUIRE(fclose(record_file)==0,"AUTOSAVE_FIXTURE_CLOSE");record[length]←0;
+        if(damage<3){
+            char *field←strstr(record,damage==0?"source ":damage==1?"fixture ":"MOSTOW_SCENE ");
+            REQUIRE(field,"AUTOSAVE_FIXTURE_FIELD");
+            field[damage==0?7:damage==1?8:13]←damage==2?'3':'x';
+        }else if(damage==3)length←length÷2;
+        else{memcpy(record+length,"unexpected trailing record\n",27);length+=27;}
+        record_file←fopen(argv[2],"wb");REQUIRE(record_file,"AUTOSAVE_DAMAGED_OPEN");
+        REQUIRE(fwrite(record,1,length,record_file)==length&&fclose(record_file)==0,"AUTOSAVE_DAMAGED_WRITE");
+        restored←scene;restored.time←39;
+        REQUIRE(!mostow_scene_read(&restored,argv[2])&&restored.time==39,"REJECTED_LOAD_PRESERVES_MEMORY");
+        errno←ENOENT; /* A stale error must not turn a rejected file into an absent one. */
+        REQUIRE(!mostow_scene_autosave(&restored,argv[2]),"AUTOSAVE_REJECTED_RECORD");
+        record_file←fopen(argv[2],"rb");REQUIRE(record_file,"AUTOSAVE_PRESERVED_OPEN");
+        size_t after_length←fread(after_record,1,sizeof(after_record),record_file);
+        REQUIRE(!ferror(record_file)&&feof(record_file)&&fclose(record_file)==0&&
+                after_length==length&&!memcmp(record,after_record,length),"AUTOSAVE_PRESERVES_EXACT_BYTES");
+        REQUIRE(mostow_scene_write(&restored,argv[2])&&mostow_scene_read(&restored,argv[2])&&
+                restored.time==39,"EXPLICIT_SAVE_REPLACES_REJECTED_RECORD");
+    }
+    remove(argv[2]);
     for(int page=0;page<3;++page){scene.control_page=page;for(int slot=0;slot<6;++slot){float rect[4];mostow_scene_control_rect(576,1152,slot,rect);
         REQUIRE(mostow_scene_control_hit(&scene,576,1152,rect[0]+rect[2]*0.5f,rect[1]+rect[3]*0.5f)==1+page*6+slot,"PHONE_CONTROL_REACHABILITY");}}
     MostowScene interactive;mostow_scene_init(&interactive);
@@ -139,5 +173,5 @@ int main(int argc,char **argv)
     for(unsigned i=3;i<6;++i)after[i].position[2]=0.5f;
     REQUIRE(mostow_sheet_pick(crossing,after,&view,576,1152,288,576,&picked)&&picked.face==1,"NEAREST_VISIBLE_PICK");
     free(crossing);free(sheet);free(before);free(after);
-    puts("PASS classification=10 geometry models incidence orthogonality treatment replay process-reopen picking controls");return 0;
+    puts("PASS classification=10 geometry models incidence orthogonality treatment replay process-reopen picking controls autosave-preservation=5");return 0;
 }
